@@ -66,7 +66,7 @@ export default function WelcomeModal() {
             </button>
 
             <p className="text-center text-sm text-gray-500">
-              You won't be billed during the trial period
+              You wont be billed during the trial period
             </p>
           </div>
         </div>
