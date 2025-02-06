@@ -44,22 +44,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
       {/* Sidebar - Only show on non-chat pages */}
       {showSidebar && (
-<<<<<<< HEAD
-        <aside
-          className={`
-            fixed top-0 left-0 z-40 h-screen w-64 bg-white border-r border-gray-200
-            transition-transform duration-300 ease-in-out
-            ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
-            lg:translate-x-0
-          `}
-        >
-=======
         <aside className={`
           fixed top-0 left-0 z-40 h-screen w-64 bg-white border-r border-gray-200
           ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
           ${pathname === '/chat' ? '' : 'transform transition-transform duration-200 ease-in-out'}
         `}>
->>>>>>> 4a4b4ff (test)
           {/* Logo */}
           <div className="h-20 flex items-center px-6 border-b border-gray-200">
             <h1 className="text-xl font-bold text-purple-600">Dashboard</h1>
@@ -77,10 +66,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   href={item.href}
                   className={`
                     flex items-center space-x-3 px-4 py-2.5 rounded-lg
-<<<<<<< HEAD
-                    transition-colors duration-200
-=======
->>>>>>> 4a4b4ff (test)
                     ${isActive 
                       ? 'bg-purple-50 text-purple-700' 
                       : 'text-gray-600 hover:bg-purple-50 hover:text-purple-700'}
@@ -98,32 +83,18 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {/* Main Content */}
       <div className={`
         min-h-screen
-<<<<<<< HEAD
-        transition-margin duration-300 ease-in-out
-        ${showSidebar ? 'lg:ml-64' : 'lg:ml-0'}
-        ${showSidebar && isSidebarOpen ? 'ml-64' : 'ml-0'}
-=======
         ${showSidebar ? 'lg:pl-64' : ''}
         ${showSidebar && isSidebarOpen ? 'pl-64' : ''}
->>>>>>> 4a4b4ff (test)
       `}>
         {/* Header - Only show on non-chat pages */}
         {showSidebar && (
           <header className="h-20 bg-white border-b border-gray-200 flex items-center justify-end px-8">
             <div className="flex items-center space-x-5">
-<<<<<<< HEAD
-              <button className="p-3 hover:bg-purple-50 rounded-full transition-colors">
-                <Bell size={22} className="text-gray-600 hover:text-purple-600" />
-              </button>
-              <button 
-                className="p-3 hover:bg-purple-50 rounded-full transition-colors"
-=======
               <button className="p-3 hover:bg-purple-50 rounded-full">
                 <Bell size={22} className="text-gray-600 hover:text-purple-600" />
               </button>
               <button 
                 className="p-3 hover:bg-purple-50 rounded-full"
->>>>>>> 4a4b4ff (test)
                 onClick={() => setIsProfileOpen(true)}
               >
                 <User size={22} className="text-gray-600 hover:text-purple-600" />
