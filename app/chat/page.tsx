@@ -170,7 +170,11 @@ export default function ChatPage() {
       {/* Drag & Drop Overlay */}
       {isDragging && (
         <div
+<<<<<<< HEAD
           className="fixed inset-0 bg-purple-600/90 z-50 backdrop-blur-sm"
+=======
+          className="fixed inset-0 bg-purple-600/20 z-50 backdrop-blur-sm"
+>>>>>>> 4a4b4ff (test)
           onDragLeave={handleDragLeave}
           onDragOver={handleDragOver}
           onDrop={handleDrop}
