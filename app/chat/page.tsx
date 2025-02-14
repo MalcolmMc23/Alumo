@@ -1,14 +1,23 @@
-'use client';
+"use client";
 
-import { useState, useRef, useEffect } from 'react';
-import { Send, User, Bot, Home, Plus, Bell, Upload, Paperclip } from 'lucide-react';
-import Link from 'next/link';
-import ProfilePopup from '@/components/ProfilePopup';
+import { useState, useRef, useEffect } from "react";
+import {
+  Send,
+  User,
+  Bot,
+  Home,
+  Plus,
+  Bell,
+  Upload,
+  Paperclip,
+} from "lucide-react";
+import Link from "next/link";
+import ProfilePopup from "@/components/ProfilePopup";
 
 interface Message {
   id: number;
   text: string;
-  sender: 'user' | 'bot';
+  sender: "user" | "bot";
 }
 
 interface Chat {
@@ -20,7 +29,7 @@ interface Chat {
 
 export default function ChatPage() {
   const [messages, setMessages] = useState<Message[]>([]);
-  const [inputMessage, setInputMessage] = useState('');
+  const [inputMessage, setInputMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
@@ -30,26 +39,26 @@ export default function ChatPage() {
       id: 1,
       title: "Website Development",
       lastMessage: "How do I optimize my React components?",
-      timestamp: "2 days ago"
+      timestamp: "2 days ago",
     },
     {
       id: 2,
       title: "Database Design",
       lastMessage: "What's the best way to structure my tables?",
-      timestamp: "1 week ago"
+      timestamp: "1 week ago",
     },
     {
       id: 3,
       title: "API Integration",
       lastMessage: "How can I handle authentication?",
-      timestamp: "2 weeks ago"
-    }
+      timestamp: "2 weeks ago",
+    },
   ]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
   useEffect(() => {
@@ -58,7 +67,7 @@ export default function ChatPage() {
 
   useEffect(() => {
     if (textareaRef.current) {
-      textareaRef.current.style.height = 'auto';
+      textareaRef.current.style.height = "auto";
       textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
     }
   }, [inputMessage]);
@@ -87,19 +96,19 @@ export default function ChatPage() {
     setIsDragging(false);
 
     const files = Array.from(e.dataTransfer.files);
-    files.forEach(file => {
-      console.log('File path:', file.name);
-      console.log('File type:', file.type);
-      console.log('File size:', file.size);
+    files.forEach((file) => {
+      console.log("File path:", file.name);
+      console.log("File type:", file.type);
+      console.log("File size:", file.size);
     });
   };
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
-    files.forEach(file => {
-      console.log('File path:', file.name);
-      console.log('File type:', file.type);
-      console.log('File size:', file.size);
+    files.forEach((file) => {
+      console.log("File path:", file.name);
+      console.log("File type:", file.type);
+      console.log("File size:", file.size);
     });
   };
 
@@ -109,32 +118,32 @@ export default function ChatPage() {
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!inputMessage.trim() || isLoading) return;
 
     const userMessage: Message = {
       id: Date.now(),
       text: inputMessage.trim(),
-      sender: 'user',
+      sender: "user",
     };
 
-    setMessages(prev => [...prev, userMessage]);
-    setInputMessage('');
+    setMessages((prev) => [...prev, userMessage]);
+    setInputMessage("");
     setIsLoading(true);
 
     setTimeout(() => {
       const botMessage: Message = {
         id: Date.now() + 1,
-        text: 'This is a mock response. Integrate your AI service here. The response can be much longer to demonstrate how the chat interface handles multiple lines of text in a single message.',
-        sender: 'bot',
+        text: "This is a mock response. Integrate your AI service here. The response can be much longer to demonstrate how the chat interface handles multiple lines of text in a single message.",
+        sender: "bot",
       };
-      setMessages(prev => [...prev, botMessage]);
+      setMessages((prev) => [...prev, botMessage]);
       setIsLoading(false);
     }, 1000);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
+    if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSendMessage(e);
     }
@@ -146,18 +155,18 @@ export default function ChatPage() {
       id: Date.now(),
       title: "New Chat",
       lastMessage: "",
-      timestamp: "Just now"
+      timestamp: "Just now",
     };
     setChats([newChat, ...chats]);
   };
 
   return (
-    <div 
-      className="min-h-screen bg-gray-50"
-      onDragEnter={handleDragEnter}
-    >
-      <ProfilePopup isOpen={isProfileOpen} onClose={() => setIsProfileOpen(false)} />
-      
+    <div className="min-h-screen bg-gray-50" onDragEnter={handleDragEnter}>
+      <ProfilePopup
+        isOpen={isProfileOpen}
+        onClose={() => setIsProfileOpen(false)}
+      />
+
       {/* Hidden file input */}
       <input
         type="file"
@@ -166,7 +175,7 @@ export default function ChatPage() {
         className="hidden"
         multiple
       />
-      
+
       {/* Drag & Drop Overlay */}
       {isDragging && (
         <div
@@ -206,8 +215,12 @@ export default function ChatPage() {
                 key={chat.id}
                 className="w-full text-left p-4 hover:bg-gray-50 border-b border-gray-100 transition-colors"
               >
-                <h3 className="font-medium text-gray-900 truncate">{chat.title}</h3>
-                <p className="text-sm text-gray-500 truncate">{chat.lastMessage}</p>
+                <h3 className="font-medium text-gray-900 truncate">
+                  {chat.title}
+                </h3>
+                <p className="text-sm text-gray-500 truncate">
+                  {chat.lastMessage}
+                </p>
                 <p className="text-xs text-gray-400 mt-1">{chat.timestamp}</p>
               </button>
             ))}
@@ -218,7 +231,7 @@ export default function ChatPage() {
         <div className="flex-1 flex flex-col">
           {/* Top Bar */}
           <div className="h-20 bg-white border-b border-gray-200 flex items-center justify-between px-8">
-            <Link 
+            <Link
               href="/"
               className="p-3 hover:bg-gray-100 rounded-lg transition-colors"
               title="Back to Dashboard"
@@ -227,13 +240,19 @@ export default function ChatPage() {
             </Link>
             <div className="flex items-center space-x-5">
               <button className="p-3 hover:bg-purple-50 rounded-full transition-colors">
-                <Bell size={22} className="text-gray-600 hover:text-purple-600" />
+                <Bell
+                  size={22}
+                  className="text-gray-600 hover:text-purple-600"
+                />
               </button>
-              <button 
+              <button
                 className="p-3 hover:bg-purple-50 rounded-full transition-colors"
                 onClick={() => setIsProfileOpen(true)}
               >
-                <User size={22} className="text-gray-600 hover:text-purple-600" />
+                <User
+                  size={22}
+                  className="text-gray-600 hover:text-purple-600"
+                />
               </button>
             </div>
           </div>
@@ -243,8 +262,13 @@ export default function ChatPage() {
             {messages.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center px-4">
                 <div className="text-center space-y-3 mb-8">
-                  <h2 className="text-2xl font-semibold text-gray-800">Welcome to AI Chat</h2>
-                  <p className="text-gray-600">Start a conversation by typing a message below or drop a file anywhere.</p>
+                  <h2 className="text-2xl font-semibold text-gray-800">
+                    Welcome to AI Chat
+                  </h2>
+                  <p className="text-gray-600">
+                    Start a conversation by typing a message below or drop a
+                    file anywhere.
+                  </p>
                 </div>
                 {/* Centered oval input for empty state */}
                 <div className="w-full max-w-2xl">
@@ -254,7 +278,10 @@ export default function ChatPage() {
                       onClick={handleAttachmentClick}
                       className="absolute left-2 top-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors"
                     >
-                      <Paperclip size={18} className="text-gray-400 hover:text-purple-600 transition-colors" />
+                      <Paperclip
+                        size={18}
+                        className="text-gray-400 hover:text-purple-600 transition-colors"
+                      />
                     </button>
                     <input
                       type="text"
@@ -269,9 +296,11 @@ export default function ChatPage() {
                       disabled={!inputMessage.trim() || isLoading}
                       className={`
                         absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center rounded-full
-                        ${inputMessage.trim() && !isLoading
-                          ? 'bg-purple-600 hover:bg-purple-700 text-white'
-                          : 'bg-gray-100 text-gray-400 cursor-not-allowed'}
+                        ${
+                          inputMessage.trim() && !isLoading
+                            ? "bg-purple-600 hover:bg-purple-700 text-white"
+                            : "bg-gray-100 text-gray-400 cursor-not-allowed"
+                        }
                         transition-colors
                       `}
                     >
@@ -287,12 +316,12 @@ export default function ChatPage() {
                     key={message.id}
                     className={`
                       px-4 py-6
-                      ${message.sender === 'bot' ? 'bg-gray-50' : 'bg-white'}
+                      ${message.sender === "bot" ? "bg-gray-50" : "bg-white"}
                     `}
                   >
                     <div className="max-w-3xl mx-auto flex gap-4">
                       <div className="flex-shrink-0 w-8 h-8">
-                        {message.sender === 'user' ? (
+                        {message.sender === "user" ? (
                           <div className="w-8 h-8 rounded-full bg-purple-600 flex items-center justify-center">
                             <User className="w-5 h-5 text-white" />
                           </div>
@@ -304,7 +333,7 @@ export default function ChatPage() {
                       </div>
                       <div className="flex-1 space-y-2">
                         <p className="font-medium text-sm text-gray-600">
-                          {message.sender === 'user' ? 'You' : 'Assistant'}
+                          {message.sender === "user" ? "You" : "Assistant"}
                         </p>
                         <div className="prose prose-purple max-w-none">
                           {message.text}
@@ -340,7 +369,10 @@ export default function ChatPage() {
                     onClick={handleAttachmentClick}
                     className="absolute left-2 top-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors"
                   >
-                    <Paperclip size={18} className="text-gray-400 hover:text-purple-600 transition-colors" />
+                    <Paperclip
+                      size={18}
+                      className="text-gray-400 hover:text-purple-600 transition-colors"
+                    />
                   </button>
                   <input
                     type="text"
@@ -355,9 +387,11 @@ export default function ChatPage() {
                     disabled={!inputMessage.trim() || isLoading}
                     className={`
                       absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center rounded-full
-                      ${inputMessage.trim() && !isLoading
-                        ? 'bg-purple-600 hover:bg-purple-700 text-white'
-                        : 'bg-gray-100 text-gray-400 cursor-not-allowed'}
+                      ${
+                        inputMessage.trim() && !isLoading
+                          ? "bg-purple-600 hover:bg-purple-700 text-white"
+                          : "bg-gray-100 text-gray-400 cursor-not-allowed"
+                      }
                       transition-colors
                     `}
                   >
