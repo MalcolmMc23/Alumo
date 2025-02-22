@@ -1,10 +1,12 @@
+"use client";
+
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { FileText, ChartBar, Users } from "lucide-react";
 import OnBoardPopup from "@/components/OnBoardPopup";
 import { authOptions, loginIsRequiredServer } from "@/lib/auth";
 
-export default async function Home() {
+export default function Home() {
   const [isOnBoardOpen, setisOnBoardOpen] = useState(true);
   const router = useRouter();
 
