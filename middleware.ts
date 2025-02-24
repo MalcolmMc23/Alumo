@@ -1,11 +1,21 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { getToken } from "next-auth/jwt";
 
-export function middleware(request: NextRequest) {
-  const path = request.nextUrl.pathname;
+export async function middleware(request: NextRequest) {
+  const token = await getToken({ req: request });
+  const { pathname } = request.nextUrl;
 
-  // Mock authentication check - replace with your actual auth check
-  const isAuthenticated = false; // This should be your actual auth check
+  // Allow access to login page and NextAuth paths
+  if (pathname === '/login' || pathname.startsWith('/api/auth')) {
+    return NextResponse.next();
+  }
+  
+  // Require authentication for all other routes
+  if (!token) {
+    const loginUrl = new URL('/login', request.url);
+    return NextResponse.redirect(loginUrl);
+  }
 
   return NextResponse.next();
 }

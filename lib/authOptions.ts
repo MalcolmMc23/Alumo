@@ -2,6 +2,15 @@ import { AuthOptions } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import { findOrCreateUser } from "./db";
 
+declare module "next-auth" {
+  interface Session {
+    user: {
+      google_sub?: string;
+      // ... other properties ...
+    }
+  }
+}
+
 export const authOptions: AuthOptions = {
   providers: [
     GoogleProvider({
@@ -34,7 +43,7 @@ export const authOptions: AuthOptions = {
     },
 
     async redirect({ url, baseUrl }) {
-      return `${baseUrl}/chat`; // Redirect user to /chat after login
+      return baseUrl; // Redirect to the base URL 
     },
   },
 };

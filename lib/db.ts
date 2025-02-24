@@ -1,23 +1,24 @@
-import { Pool } from "pg";
+import { PrismaClient } from '@prisma/client'
 
-export const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-});
+const prisma = new PrismaClient()
 
 export async function findOrCreateUser(profile: any) {
   try {
-    const existing = await pool.query(
-      `SELECT * FROM users WHERE google_sub = $1 LIMIT 1`,
-      [profile?.sub]
-    );
+    const existing = await prisma.user.findFirst({
+      where: {
+        google_sub: profile?.sub,
+      },
+    });
 
-    if (existing.rowCount === 0) {
-      // If new, insert the user
-      await pool.query(
-        `INSERT INTO users (google_sub, email, display_name)
-         VALUES ($1, $2, $3)`,
-        [profile?.sub, profile?.email, profile?.name]
-      );
+    if (!existing) {
+      // If new user, insert a new record
+      await prisma.user.create({
+        data: {
+          google_sub: profile?.sub,
+          email: profile?.email,
+          display_name: profile?.name,
+        },
+      });
     }
 
     return true;
