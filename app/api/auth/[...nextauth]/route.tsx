@@ -25,25 +25,6 @@ export const authOptions = {
   pages: {
     signIn: "/login",
   },
-  callbacks: {
-    async session({
-      session,
-      token,
-      user,
-    }: {
-      session: Session;
-      token: JWT;
-      user: User;
-    }) {
-      // Add user information to the session
-      session.user = {
-        ...session.user,
-        id: token.sub,
-        // Add any additional user data you want to include in the session
-      };
-      return session;
-    },
-  },
 };
 
 const handler = NextAuth(authOptions);

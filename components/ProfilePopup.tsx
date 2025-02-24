@@ -1,6 +1,7 @@
 "use client";
 
 import { User, Mail, X, LogOut } from "lucide-react";
+import { signOut } from "next-auth/react";
 
 interface ProfilePopupProps {
   isOpen: boolean;
@@ -21,9 +22,14 @@ export default function ProfilePopup({ isOpen, onClose }: ProfilePopupProps) {
   };
 
   const handleLogoutClick = () => {
-    console.log("User logged out");
-    // Add actual logout logic here
-    onClose();
+    signOut({ callbackUrl: "/login" })
+      .then(() => {
+        console.log("User logged out");
+        onClose();
+      })
+      .catch((error) => {
+        console.error("Error logging out:", error);
+      });
   };
 
   return (
