@@ -1,254 +1,97 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { X, ChevronRight, ChevronLeft, GraduationCap } from 'lucide-react';
+import { X } from "lucide-react";
+import { useState } from "react";
+import { signIn } from "next-auth/react";
 
-interface LoginPopupProps {
+interface AuthPopupProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-interface FormData {
-  educationLevel: string;
-  major: string;
-  graduationYear: string;
-  careerGoals: string;
-  resumeExperience: string;
-  specificHelp: string;
-}
-
-const educationLevels = [
-  { value: 'freshman', label: 'Freshman' },
-  { value: 'sophomore', label: 'Sophomore' },
-  { value: 'junior', label: 'Junior' },
-  { value: 'senior', label: 'Senior' },
-  { value: 'graduate', label: 'Graduate Student' }
-];
-
-const experienceLevels = [
-  { value: 'none', label: 'No Experience' },
-  { value: 'some', label: 'Some Experience' },
-  { value: 'experienced', label: 'Experienced' }
-];
-
-export default function LoginPopup({ isOpen, onClose }: LoginPopupProps) {
-  const [step, setStep] = useState(1);
-  const [formData, setFormData] = useState<FormData>({
-    educationLevel: '',
-    major: '',
-    graduationYear: '',
-    careerGoals: '',
-    resumeExperience: '',
-    specificHelp: '',
-  });
+export default function AuthPopup({ isOpen, onClose }: AuthPopupProps) {
+  // For demonstration, track whether the user is in "Login" or "Sign Up" mode
+  const [isLoginMode, setIsLoginMode] = useState(true);
 
   if (!isOpen) return null;
 
-  const totalSteps = 4;
-
-  const handleInputChange = (field: keyof FormData, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-  };
-
-  const handleNext = () => {
-    if (step < totalSteps) {
-      setStep(step + 1);
-    } else {
-      console.log('Form submitted:', formData);
-      onClose();
-    }
-  };
-
-  const handleBack = () => {
-    if (step > 1) {
-      setStep(step - 1);
-    }
-  };
-
-  const renderStep = () => {
-    switch (step) {
-      case 1:
-        return (
-          <div className="space-y-6">
-            <div className="space-y-4">
-              <label className="block text-sm font-medium text-gray-700 mb-3">
-                What is your current education level?
-              </label>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {educationLevels.map((level) => (
-                  <button
-                    key={level.value}
-                    onClick={() => handleInputChange('educationLevel', level.value)}
-                    className={`
-                      px-4 py-3 rounded-lg border-2 text-left
-                      ${formData.educationLevel === level.value
-                        ? 'border-purple-600 bg-purple-50 text-purple-700'
-                        : 'border-gray-200 hover:border-purple-200 text-gray-700'}
-                    `}
-                  >
-                    {level.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-            
-            <div className="space-y-4">
-              <label className="block text-sm font-medium text-gray-700">
-                What is your major?
-              </label>
-              <input
-                type="text"
-                value={formData.major}
-                onChange={(e) => handleInputChange('major', e.target.value)}
-                placeholder="e.g., Computer Science"
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-100 focus:border-purple-500"
-              />
-            </div>
-          </div>
-        );
-      case 2:
-        return (
-          <div className="space-y-6">
-            <div className="space-y-4">
-              <label className="block text-sm font-medium text-gray-700 mb-3">
-                Expected graduation year
-              </label>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                {[...Array(6)].map((_, i) => {
-                  const year = new Date().getFullYear() + i;
-                  return (
-                    <button
-                      key={year}
-                      onClick={() => handleInputChange('graduationYear', year.toString())}
-                      className={`
-                        px-4 py-3 rounded-lg border-2 text-center
-                        ${formData.graduationYear === year.toString()
-                          ? 'border-purple-600 bg-purple-50 text-purple-700'
-                          : 'border-gray-200 hover:border-purple-200 text-gray-700'}
-                      `}
-                    >
-                      {year}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-            
-            <div className="space-y-4">
-              <label className="block text-sm font-medium text-gray-700">
-                What are your career goals?
-              </label>
-              <textarea
-                value={formData.careerGoals}
-                onChange={(e) => handleInputChange('careerGoals', e.target.value)}
-                placeholder="Describe your career aspirations..."
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-100 focus:border-purple-500 h-32 resize-none"
-              />
-            </div>
-          </div>
-        );
-      case 3:
-        return (
-          <div className="space-y-6">
-            <div className="space-y-4">
-              <label className="block text-sm font-medium text-gray-700 mb-3">
-                Do you have previous experience writing resumes?
-              </label>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                {experienceLevels.map((level) => (
-                  <button
-                    key={level.value}
-                    onClick={() => handleInputChange('resumeExperience', level.value)}
-                    className={`
-                      px-4 py-3 rounded-lg border-2 text-center
-                      ${formData.resumeExperience === level.value
-                        ? 'border-purple-600 bg-purple-50 text-purple-700'
-                        : 'border-gray-200 hover:border-purple-200 text-gray-700'}
-                    `}
-                  >
-                    {level.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-        );
-      case 4:
-        return (
-          <div className="space-y-6">
-            <div className="space-y-4">
-              <label className="block text-sm font-medium text-gray-700">
-                What specific help are you looking for with your resume?
-              </label>
-              <textarea
-                value={formData.specificHelp}
-                onChange={(e) => handleInputChange('specificHelp', e.target.value)}
-                placeholder="e.g., Highlighting academic achievements, formatting, industry-specific tips..."
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-100 focus:border-purple-500 h-32 resize-none"
-              />
-            </div>
-          </div>
-        );
-      default:
-        return null;
-    }
+  // Example handler for the Google authentication flow
+  const handleGoogleAuth = () => {
+    signIn("google");
+    // Integrate your actual Google OAuth logic here (e.g., using NextAuth, Firebase, etc.)
+    onClose();
   };
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 animate-fade-in p-4">
-      <div className="bg-white rounded-2xl w-full max-w-2xl p-12 relative animate-zoom-in">
+      <div className="relative bg-white rounded-2xl w-full max-w-md p-8 animate-zoom-in">
+        {/* Close Button */}
         <button
           onClick={onClose}
           className="absolute right-6 top-6 text-gray-400 hover:text-gray-600 p-2 hover:bg-gray-100 rounded-full"
         >
           <X size={24} />
         </button>
-        
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-purple-100 mb-6">
-            <GraduationCap size={32} className="text-purple-600" />
-          </div>
-          <h2 className="text-3xl font-bold text-gray-900 mb-4">Tell Us About Yourself</h2>
-          <p className="text-gray-600 text-lg">
-            Help us understand your needs better to provide personalized resume guidance
+
+        {/* Header */}
+        <div className="text-center mb-6">
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">
+            {isLoginMode ? "Log In" : "Sign Up"} to Alumo
+          </h2>
+          <p className="text-gray-600">
+            {isLoginMode
+              ? "Welcome back! Continue with Google or switch to sign up."
+              : "Join us! Create an account with Google or switch to log in."}
           </p>
         </div>
 
-        <div className="mb-8">
-          <div className="h-1 bg-gray-100 rounded-full">
-            <div 
-              className="h-1 bg-purple-600 rounded-full transition-all duration-300"
-              style={{ width: `${(step / totalSteps) * 100}%` }}
+        {/* Google Auth Button */}
+        <button
+          onClick={handleGoogleAuth}
+          className="flex items-center justify-center gap-2 w-full py-3 px-4 mb-4 text-black bg-white hover:bg-gray-100 rounded-lg transition-colors"
+        >
+          <svg
+            className="w-5 h-5"
+            viewBox="0 0 533.5 544.3"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              fill="#4285F4"
+              d="M533.5 278.4c0-15.6-1.3-31.2-3.8-46.4H272v87.8h146.9c-6.3 34.2-24.8 63.2-52.7 82.5l84.4 65.4c49-45 77.3-111.4 77.3-189.3z"
             />
-          </div>
-          <div className="mt-2 text-sm text-gray-500 text-center">
-            Step {step} of {totalSteps}
-          </div>
+            <path
+              fill="#34A853"
+              d="M272 544.3c71.4 0 131.4-23.7 175.2-64.4l-84.4-65.4c-23 15.8-52.7 25-90.8 25-69.6 0-128.4-46.9-149.4-109.6H37.1v68.5c43 85.6 131.6 145.4 234.9 145.4z"
+            />
+            <path
+              fill="#FBBC04"
+              d="M122.6 330.4c-10.1-30.2-10.1-62.6 0-92.8v-68.5H37.1c-36.2 70.8-36.2 159.1 0 229.9l85.5-68.6z"
+            />
+            <path
+              fill="#EA4335"
+              d="M272 107.6c37.8 0 71.7 13 98.4 38l73.8-73.8C413.3 28.7 343.4 0 272 0 168.7 0 80.1 59.8 37.1 145.4l85.5 68.5C143.6 150.7 202.4 107.6 272 107.6z"
+            />
+          </svg>
+          {isLoginMode ? "Continue with Google" : "Sign Up with Google"}
+        </button>
+
+        {/* Divider or Additional Form Fields (Optional) */}
+        <div className="relative flex items-center justify-center my-4">
+          <span className="text-sm text-gray-400">OR</span>
         </div>
 
-        <div className="mb-8">
-          {renderStep()}
-        </div>
-
-        <div className="flex justify-between">
+        {/* Optional: Switch between Login and Signup */}
+        <div className="text-center">
+          <p className="text-gray-600">
+            {isLoginMode
+              ? "Don't have an account?"
+              : "Already have an account?"}
+          </p>
           <button
-            onClick={handleBack}
-            className={`flex items-center gap-2 px-6 py-3 rounded-lg ${
-              step === 1
-                ? 'text-gray-400 cursor-not-allowed'
-                : 'text-gray-600 hover:bg-gray-100'
-            }`}
-            disabled={step === 1}
+            onClick={() => setIsLoginMode(!isLoginMode)}
+            className="text-purple-600 hover:underline mt-2"
           >
-            <ChevronLeft size={20} />
-            Back
-          </button>
-          <button
-            onClick={handleNext}
-            className="flex items-center gap-2 px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
-          >
-            {step === totalSteps ? 'Get Started' : 'Next'}
-            <ChevronRight size={20} />
+            {isLoginMode ? "Sign Up" : "Log In"} instead
           </button>
         </div>
       </div>
