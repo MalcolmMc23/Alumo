@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { FileText, ChartBar, Users } from "lucide-react";
+import { FileText, BarChart, Users } from "lucide-react";
 import OnBoardPopup from "@/components/OnBoardPopup";
 import { authOptions, loginIsRequiredServer } from "@/lib/auth";
 
@@ -47,7 +47,7 @@ export default function Home() {
         <div className="bg-white p-6 rounded-lg shadow-sm border border-purple-100 hover:border-purple-200 transition-colors">
           <div className="flex items-center space-x-4 mb-4">
             <div className="p-3 bg-purple-50 rounded-lg">
-              <ChartBar size={24} className="text-purple-600" />
+              <BarChart size={24} className="text-purple-600" />
             </div>
             <h3 className="text-lg font-semibold text-purple-800">Analytics</h3>
           </div>

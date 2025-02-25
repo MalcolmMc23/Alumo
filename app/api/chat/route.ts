@@ -1,16 +1,21 @@
-import { NextResponse } from "next/server";
+import { NextResponse, NextRequest } from 'next/server';
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
 import prisma from "@/lib/prisma";
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   try {
+    const body = await req.json();
+    const { userId, messages } = body;
+
+    // Get the current user from the session
     const session = await getServerSession(authOptions);
     
     if (!session?.user?.email) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    // Find the user in the database
     const user = await prisma.user.findUnique({
       where: { email: session.user.email },
     });
@@ -19,25 +24,38 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    const { title } = await req.json();
+    // Validate messages
+    if (!messages || !Array.isArray(messages) || messages.length === 0) {
+      return NextResponse.json({ error: 'Invalid messages format' }, { status: 400 });
+    }
 
-    const chat = await prisma.conversation.create({
+    // Create a title from the first user message
+    const userMessage = messages.find(m => m.role === 'user');
+    const title = userMessage?.content 
+      ? userMessage.content.substring(0, 50) + (userMessage.content.length > 50 ? '...' : '')
+      : 'New Conversation';
+
+    // Create the conversation with messages
+    const conversation = await prisma.conversation.create({
       data: {
-        title: title || "New Chat",
         userId: user.id,
+        title,
+        messages: {
+          create: messages.map(msg => ({
+            role: msg.role,
+            content: msg.content
+          })),
+        },
       },
       include: {
         messages: true,
       },
     });
 
-    return NextResponse.json(chat);
+    return NextResponse.json(conversation, { status: 201 });
   } catch (error) {
-    console.error("Error creating chat:", error);
-    return NextResponse.json(
-      { error: "Failed to create chat" },
-      { status: 500 }
-    );
+    console.error('Error creating conversation', error);
+    return NextResponse.json({ error: 'Error creating conversation' }, { status: 500 });
   }
 }
 
@@ -61,8 +79,7 @@ export async function GET(req: Request) {
       where: { userId: user.id },
       include: {
         messages: {
-          orderBy: { createdAt: "desc" },
-          take: 1,
+          orderBy: { createdAt: "asc" },
         },
       },
       orderBy: { updatedAt: "desc" },

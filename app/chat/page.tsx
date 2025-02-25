@@ -26,10 +26,16 @@ interface Message {
 }
 
 interface Chat {
-  id: number;
+  id: string;
   title: string;
-  lastMessage: string;
-  timestamp: string;
+  messages: {
+    id: string;
+    content: string;
+    role: string;
+    createdAt: string;
+  }[];
+  createdAt: string;
+  updatedAt: string;
 }
 
 export default function ChatPage() {
@@ -40,28 +46,36 @@ export default function ChatPage() {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [chats, setChats] = useState<Chat[]>([
-    {
-      id: 1,
-      title: "Website Development",
-      lastMessage: "How do I optimize my React components?",
-      timestamp: "2 days ago",
-    },
-    {
-      id: 2,
-      title: "Database Design",
-      lastMessage: "What's the best way to structure my tables?",
-      timestamp: "1 week ago",
-    },
-    {
-      id: 3,
-      title: "API Integration",
-      lastMessage: "How can I handle authentication?",
-      timestamp: "2 weeks ago",
-    },
-  ]);
+  const [chats, setChats] = useState<Chat[]>([]);
+  const [isLoadingChats, setIsLoadingChats] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [activeConversationId, setActiveConversationId] = useState<
+    string | null
+  >(null);
+
+  // Fetch chats from the database
+  useEffect(() => {
+    const fetchChats = async () => {
+      try {
+        setIsLoadingChats(true);
+        const response = await fetch("/api/chat");
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch chats");
+        }
+
+        const data = await response.json();
+        setChats(data);
+      } catch (error) {
+        console.error("Error fetching chats:", error);
+      } finally {
+        setIsLoadingChats(false);
+      }
+    };
+
+    fetchChats();
+  }, []);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -138,7 +152,8 @@ export default function ChatPage() {
     setIsLoading(true);
 
     try {
-      const response = await fetch("/api/chat/openrouter", {
+      // First, get response from AI
+      const aiResponse = await fetch("/api/chat/openrouter", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -149,20 +164,89 @@ export default function ChatPage() {
         }),
       });
 
-      if (!response.ok) {
-        throw new Error("API request failed");
+      if (!aiResponse.ok) {
+        throw new Error("AI API request failed");
       }
 
-      const data = await response.json();
-
-      setChatHistory(data.history || []);
+      const aiData = await aiResponse.json();
+      setChatHistory(aiData.history || []);
 
       const botMessage: Message = {
         id: Date.now() + 1,
-        text: data.message || "No response from API",
+        text: aiData.message || "No response from API",
         sender: "bot",
       };
       setMessages((prev) => [...prev, botMessage]);
+
+      // Then, store the conversation and messages in the database
+      try {
+        const messagesToSave = [
+          { content: userMessage.text, role: "user" },
+          { content: botMessage.text, role: "assistant" },
+        ];
+
+        if (activeConversationId) {
+          // Update existing conversation
+          const updateResponse = await fetch(
+            `/api/chat/${activeConversationId}`,
+            {
+              method: "PATCH",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                messages: messagesToSave,
+              }),
+            }
+          );
+
+          if (!updateResponse.ok) {
+            console.error("Failed to update conversation in database");
+          } else {
+            console.log("Conversation updated in database successfully");
+
+            // Refresh the chat list
+            const chatsResponse = await fetch("/api/chat");
+            if (chatsResponse.ok) {
+              const updatedChats = await chatsResponse.json();
+              setChats(updatedChats);
+            }
+          }
+        } else {
+          // Create new conversation
+          const createResponse = await fetch("/api/chat", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              messages: messagesToSave,
+            }),
+          });
+
+          if (!createResponse.ok) {
+            console.error("Failed to store conversation in database");
+          } else {
+            const newConversation = await createResponse.json();
+            console.log(
+              "New conversation stored in database successfully",
+              newConversation
+            );
+
+            // Update the active conversation ID
+            setActiveConversationId(newConversation.id);
+
+            // Refresh the chat list
+            const chatsResponse = await fetch("/api/chat");
+            if (chatsResponse.ok) {
+              const updatedChats = await chatsResponse.json();
+              setChats(updatedChats);
+            }
+          }
+        }
+      } catch (dbError) {
+        console.error("Error storing conversation in database:", dbError);
+      }
     } catch (error) {
       console.error("Error calling API:", error);
       const botMessage: Message = {
@@ -187,12 +271,109 @@ export default function ChatPage() {
     setMessages([]);
     setChatHistory([]);
     const newChat: Chat = {
-      id: Date.now(),
+      id: Date.now().toString(),
       title: "New Chat",
-      lastMessage: "",
-      timestamp: "Just now",
+      messages: [],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
     };
-    setChats([newChat, ...chats]);
+    setChats([newChat]);
+  };
+
+  const loadConversation = async (chatId: string) => {
+    try {
+      setIsLoading(true);
+      setActiveConversationId(chatId);
+
+      // Fetch the full conversation with all messages from the server
+      const response = await fetch(`/api/chat/${chatId}`);
+
+      if (!response.ok) {
+        throw new Error("Failed to load conversation");
+      }
+
+      const conversation = await response.json();
+
+      if (
+        conversation &&
+        conversation.messages &&
+        conversation.messages.length > 0
+      ) {
+        // Convert the database messages to the format our UI expects
+        const uiMessages: Message[] = conversation.messages.map((msg: any) => ({
+          id: parseInt(msg.id.replace(/-/g, "")),
+          text: msg.content,
+          sender: msg.role === "user" ? "user" : "bot",
+        }));
+
+        setMessages(uiMessages);
+
+        // Also update chat history for the AI
+        const aiChatHistory: ChatMessage[] = conversation.messages.map(
+          (msg: any) => ({
+            role: msg.role as "user" | "assistant" | "system",
+            content: msg.content,
+          })
+        );
+
+        setChatHistory(aiChatHistory);
+      } else {
+        // Empty conversation or no messages
+        setMessages([]);
+        setChatHistory([]);
+      }
+    } catch (error) {
+      console.error("Error loading conversation:", error);
+      // Reset UI in case of error
+      setMessages([]);
+      setChatHistory([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const renderChatList = () => {
+    if (isLoadingChats) {
+      return (
+        <div className="p-4 text-center text-gray-500">
+          Loading conversations...
+        </div>
+      );
+    }
+
+    if (chats.length === 0) {
+      return (
+        <div className="p-4 text-center text-gray-500">
+          No conversations yet
+        </div>
+      );
+    }
+
+    return chats.map((chat) => (
+      <div
+        key={chat.id}
+        className={`p-3 hover:bg-gray-100 rounded-lg cursor-pointer ${
+          activeConversationId === chat.id ? "bg-gray-100" : ""
+        }`}
+        onClick={() => loadConversation(chat.id)}
+      >
+        <h3 className="font-medium truncate">
+          {chat.title || "New Conversation"}
+        </h3>
+        <p className="text-sm text-gray-500 truncate">
+          {chat.messages[0]?.content || "No messages"}
+        </p>
+        <p className="text-xs text-gray-400 mt-1">
+          {new Date(chat.updatedAt).toLocaleDateString()}
+        </p>
+      </div>
+    ));
+  };
+
+  const handleNewChat = () => {
+    setMessages([]);
+    setChatHistory([]);
+    setActiveConversationId(null);
   };
 
   return (
@@ -237,29 +418,14 @@ export default function ChatPage() {
           </div>
           <div className="p-4 border-b border-gray-200">
             <button
-              onClick={startNewChat}
+              onClick={handleNewChat}
               className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
             >
               <Plus size={20} />
               New Chat
             </button>
           </div>
-          <div className="flex-1 overflow-y-auto">
-            {chats.map((chat) => (
-              <button
-                key={chat.id}
-                className="w-full text-left p-4 hover:bg-gray-50 border-b border-gray-100 transition-colors"
-              >
-                <h3 className="font-medium text-gray-900 truncate">
-                  {chat.title}
-                </h3>
-                <p className="text-sm text-gray-500 truncate">
-                  {chat.lastMessage}
-                </p>
-                <p className="text-xs text-gray-400 mt-1">{chat.timestamp}</p>
-              </button>
-            ))}
-          </div>
+          <div className="flex-1 overflow-y-auto">{renderChatList()}</div>
         </div>
 
         {/* Main Chat Area */}
