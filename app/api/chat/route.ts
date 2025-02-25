@@ -29,21 +29,21 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Invalid messages format' }, { status: 400 });
     }
 
-    // Create a title from the first user message
-    const userMessage = messages.find(m => m.role === 'user');
-    const title = userMessage?.content 
-      ? userMessage.content.substring(0, 50) + (userMessage.content.length > 50 ? '...' : '')
-      : 'New Conversation';
+    // Create initial title from the first user message
+    const firstUserMessage = messages.find((msg: any) => msg.role === "user");
+    const initialTitle = firstUserMessage
+      ? firstUserMessage.content.substring(0, 50) + (firstUserMessage.content.length > 50 ? "..." : "")
+      : "New Conversation";
 
-    // Create the conversation with messages
+    // Create a new conversation with messages
     const conversation = await prisma.conversation.create({
       data: {
         userId: user.id,
-        title,
+        title: initialTitle,
         messages: {
-          create: messages.map(msg => ({
+          create: messages.map((msg: any) => ({
+            content: msg.content,
             role: msg.role,
-            content: msg.content
           })),
         },
       },

@@ -114,22 +114,10 @@ export default function ChatPage() {
     e.preventDefault();
     e.stopPropagation();
     setIsDragging(false);
-
-    const files = Array.from(e.dataTransfer.files);
-    files.forEach((file) => {
-      console.log("File path:", file.name);
-      console.log("File type:", file.type);
-      console.log("File size:", file.size);
-    });
   };
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
-    files.forEach((file) => {
-      console.log("File path:", file.name);
-      console.log("File type:", file.type);
-      console.log("File size:", file.size);
-    });
+    // Remove file upload handling
   };
 
   const handleAttachmentClick = () => {
@@ -490,7 +478,7 @@ export default function ChatPage() {
                       onChange={(e) => setInputMessage(e.target.value)}
                       onKeyDown={handleKeyDown}
                       placeholder="Type your message..."
-                      className="w-full pl-14 pr-16 py-4 bg-white rounded-full border border-gray-200 focus:border-purple-500 focus:ring-2 focus:ring-purple-100 focus:outline-none text-gray-900 placeholder:text-gray-400 shadow-sm"
+                      className="w-full pl-14 pr-16 py-4 bg-white rounded-full border border-gray-200 focus:border-purple-500 focus:ring-2 focus:ring-purple-100 focus:outline-none text-gray-900 placeholder:text-gray-400 shadow-sm hover:shadow transition-all"
                     />
                     <button
                       type="submit"
@@ -499,13 +487,16 @@ export default function ChatPage() {
                         absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center rounded-full
                         ${
                           inputMessage.trim() && !isLoading
-                            ? "bg-purple-600 hover:bg-purple-700 text-white"
+                            ? "bg-purple-600 hover:bg-purple-700 text-white shadow-md hover:shadow-lg transform transition-all hover:scale-105"
                             : "bg-gray-100 text-gray-400 cursor-not-allowed"
                         }
-                        transition-colors
+                        transition-all
                       `}
                     >
-                      <Send size={18} className="transform translate-x-[1px]" />
+                      <Send
+                        size={18}
+                        className="transform translate-x-[-1px] translate-y-[1px]"
+                      />
                     </button>
                   </form>
                 </div>
@@ -516,41 +507,85 @@ export default function ChatPage() {
                   <div
                     key={message.id}
                     className={`
-                      px-4 py-6
-                      ${message.sender === "bot" ? "bg-gray-50" : "bg-white"}
+                      px-4 py-2
+                      ${message.sender === "bot" ? "bg-gray-50" : ""}
                     `}
                   >
-                    <div className="max-w-3xl mx-auto flex gap-4">
-                      <div className="flex-shrink-0 w-8 h-8">
-                        {message.sender === "user" ? (
-                          <div className="w-8 h-8 rounded-full bg-purple-600 flex items-center justify-center">
-                            <User className="w-5 h-5 text-white" />
+                    <div
+                      className={`max-w-3xl mx-auto flex ${
+                        message.sender === "user"
+                          ? "justify-end"
+                          : "justify-start"
+                      } gap-4`}
+                    >
+                      {message.sender === "bot" && (
+                        <div className="flex-shrink-0 w-8 h-8 mt-1">
+                          <div className="w-8 h-8 rounded-full bg-purple-700 flex items-center justify-center">
+                            <Bot className="w-5 h-5 text-white" />
                           </div>
-                        ) : (
-                          <div className="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center">
-                            <Bot className="w-5 h-5 text-purple-600" />
-                          </div>
-                        )}
-                      </div>
-                      <div className="flex-1 space-y-2">
-                        <p className="font-medium text-sm text-gray-600">
+                        </div>
+                      )}
+                      <div
+                        className={`${
+                          message.sender === "user"
+                            ? "flex-shrink-0 max-w-[80%] ml-auto"
+                            : "flex-1 max-w-[80%]"
+                        } space-y-1`}
+                      >
+                        <p
+                          className={`font-medium text-xs ${
+                            message.sender === "user"
+                              ? "text-right text-gray-600"
+                              : "text-gray-600"
+                          }`}
+                        >
                           {message.sender === "user" ? "You" : "Assistant"}
                         </p>
-                        <div className="prose prose-purple max-w-none">
+                        <div
+                          className={`prose prose-purple w-auto inline-block ${
+                            message.sender === "user"
+                              ? "bg-purple-600 text-white float-right rounded-2xl rounded-tr-none shadow-sm chat-bubble-user px-3 py-2"
+                              : "text-gray-800 rounded-none chat-bubble-bot pl-0 pt-2"
+                          }`}
+                        >
                           {message.text}
                         </div>
                       </div>
+                      {message.sender === "user" && (
+                        <div className="flex-shrink-0 w-8 h-8 mt-1">
+                          <div className="w-8 h-8 rounded-full bg-purple-600 flex items-center justify-center">
+                            <User className="w-5 h-5 text-white" />
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))}
                 {isLoading && (
-                  <div className="px-4 py-6 bg-gray-50">
-                    <div className="max-w-3xl mx-auto flex gap-4">
-                      <div className="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center">
-                        <Bot className="w-5 h-5 text-purple-600" />
+                  <div className="px-4 py-2">
+                    <div className="max-w-3xl mx-auto flex justify-start gap-4">
+                      <div className="flex-shrink-0 w-8 h-8 mt-1">
+                        <div className="w-8 h-8 rounded-full bg-purple-700 flex items-center justify-center">
+                          <Bot className="w-5 h-5 text-white" />
+                        </div>
                       </div>
-                      <div className="flex-1">
-                        <div className="h-4 w-8 bg-gray-200 rounded-full animate-pulse" />
+                      <div className="max-w-[80%]">
+                        <div className="text-gray-900 rounded-none pl-0 pt-2 inline-block chat-bubble-bot">
+                          <div className="flex space-x-2">
+                            <div
+                              className="h-3 w-3 bg-purple-300 rounded-full animate-bounce"
+                              style={{ animationDelay: "0ms" }}
+                            />
+                            <div
+                              className="h-3 w-3 bg-purple-500 rounded-full animate-bounce"
+                              style={{ animationDelay: "150ms" }}
+                            />
+                            <div
+                              className="h-3 w-3 bg-purple-700 rounded-full animate-bounce"
+                              style={{ animationDelay: "300ms" }}
+                            />
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -562,7 +597,7 @@ export default function ChatPage() {
 
           {/* Fixed Input Area when chat has messages */}
           {messages.length > 0 && (
-            <div className="fixed bottom-0 left-64 right-0 p-6">
+            <div className="fixed bottom-0 left-64 right-0 p-6 bg-gradient-to-t from-gray-50 via-gray-50 to-transparent pb-4 pt-10">
               <div className="max-w-3xl mx-auto">
                 <form onSubmit={handleSendMessage} className="relative">
                   <button
@@ -581,7 +616,7 @@ export default function ChatPage() {
                     onChange={(e) => setInputMessage(e.target.value)}
                     onKeyDown={handleKeyDown}
                     placeholder="Type your message..."
-                    className="w-full pl-14 pr-16 py-4 bg-white rounded-full shadow-lg focus:ring-2 focus:ring-purple-100 focus:outline-none text-gray-900 placeholder:text-gray-400"
+                    className="w-full pl-14 pr-16 py-4 bg-white rounded-full shadow-lg hover:shadow-xl focus:ring-2 focus:ring-purple-100 focus:outline-none text-gray-900 placeholder:text-gray-400 border border-gray-100 focus:border-purple-300 transition-all"
                   />
                   <button
                     type="submit"
@@ -590,10 +625,10 @@ export default function ChatPage() {
                       absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center rounded-full
                       ${
                         inputMessage.trim() && !isLoading
-                          ? "bg-purple-600 hover:bg-purple-700 text-white"
+                          ? "bg-purple-600 hover:bg-purple-700 text-white shadow-md hover:shadow-lg transform transition-all hover:scale-105"
                           : "bg-gray-100 text-gray-400 cursor-not-allowed"
                       }
-                      transition-colors
+                      transition-all
                     `}
                   >
                     <Send size={18} className="transform translate-x-[1px]" />

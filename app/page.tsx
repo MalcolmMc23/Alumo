@@ -4,7 +4,6 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { FileText, BarChart, Users } from "lucide-react";
 import OnBoardPopup from "@/components/OnBoardPopup";
-import { authOptions, loginIsRequiredServer } from "@/lib/auth";
 
 export default function Home() {
   const [isOnBoardOpen, setisOnBoardOpen] = useState(true);

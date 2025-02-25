@@ -80,3 +80,70 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Chat bubble animations and styles */
+@keyframes bubble-in-right {
+  0% {
+    transform: scale(0.8);
+    transform-origin: bottom right;
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1);
+    transform-origin: bottom right;
+    opacity: 1;
+  }
+}
+
+@keyframes bubble-in-left {
+  0% {
+    transform: scale(0.8);
+    transform-origin: bottom left;
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1);
+    transform-origin: bottom left;
+    opacity: 1;
+  }
+}
+
+.chat-bubble-user {
+  animation: bubble-in-right 0.3s ease-out forwards;
+  position: relative;
+  transition: all 0.2s ease;
+  display: inline-block;
+  width: auto;
+  clear: both;
+  word-break: break-word;
+}
+
+.chat-bubble-user:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.15);
+}
+
+.chat-bubble-bot {
+  animation: fade-in 0.3s ease-out forwards;
+  position: relative;
+  transition: all 0.2s ease;
+  display: inline-block;
+  width: auto;
+  clear: both;
+  word-break: break-word;
+}
+
+.chat-bubble-bot:hover {
+  transform: translateY(-2px);
+}
+
+@keyframes fade-in {
+  0% {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
