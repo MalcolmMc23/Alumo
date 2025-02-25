@@ -14,6 +14,11 @@ import {
 import Link from "next/link";
 import ProfilePopup from "@/components/ProfilePopup";
 
+interface ChatMessage {
+  role: "user" | "assistant" | "system";
+  content: string;
+}
+
 interface Message {
   id: number;
   text: string;
@@ -29,6 +34,7 @@ interface Chat {
 
 export default function ChatPage() {
   const [messages, setMessages] = useState<Message[]>([]);
+  const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
   const [inputMessage, setInputMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
@@ -131,15 +137,43 @@ export default function ChatPage() {
     setInputMessage("");
     setIsLoading(true);
 
-    setTimeout(() => {
+    try {
+      const response = await fetch("/api/chat/openrouter", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          message: userMessage.text,
+          history: chatHistory,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("API request failed");
+      }
+
+      const data = await response.json();
+
+      setChatHistory(data.history || []);
+
       const botMessage: Message = {
         id: Date.now() + 1,
-        text: "This is a mock response. Integrate your AI service here. The response can be much longer to demonstrate how the chat interface handles multiple lines of text in a single message.",
+        text: data.message || "No response from API",
         sender: "bot",
       };
       setMessages((prev) => [...prev, botMessage]);
+    } catch (error) {
+      console.error("Error calling API:", error);
+      const botMessage: Message = {
+        id: Date.now() + 1,
+        text: "Error communicating with AI service.",
+        sender: "bot",
+      };
+      setMessages((prev) => [...prev, botMessage]);
+    } finally {
       setIsLoading(false);
-    }, 1000);
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -151,6 +185,7 @@ export default function ChatPage() {
 
   const startNewChat = () => {
     setMessages([]);
+    setChatHistory([]);
     const newChat: Chat = {
       id: Date.now(),
       title: "New Chat",

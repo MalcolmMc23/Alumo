@@ -6,7 +6,7 @@ export async function findOrCreateUser(profile: any) {
   try {
     const existing = await prisma.user.findFirst({
       where: {
-        google_sub: profile?.sub,
+        email: profile?.email,
       },
     });
 
@@ -14,9 +14,9 @@ export async function findOrCreateUser(profile: any) {
       // If new user, insert a new record
       await prisma.user.create({
         data: {
-          google_sub: profile?.sub,
           email: profile?.email,
-          display_name: profile?.name,
+          name: profile?.name,
+          image: profile?.picture,
         },
       });
     }
