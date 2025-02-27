@@ -20,7 +20,7 @@ interface ChatMessage {
 }
 
 interface Message {
-  id: number;
+  id: string;
   text: string;
   sender: "user" | "bot";
 }
@@ -130,7 +130,7 @@ export default function ChatPage() {
     if (!inputMessage.trim() || isLoading) return;
 
     const userMessage: Message = {
-      id: Date.now(),
+      id: Date.now().toString(),
       text: inputMessage.trim(),
       sender: "user",
     };
@@ -160,7 +160,7 @@ export default function ChatPage() {
       setChatHistory(aiData.history || []);
 
       const botMessage: Message = {
-        id: Date.now() + 1,
+        id: (Date.now() + 1).toString(),
         text: aiData.message || "No response from API",
         sender: "bot",
       };
@@ -238,7 +238,7 @@ export default function ChatPage() {
     } catch (error) {
       console.error("Error calling API:", error);
       const botMessage: Message = {
-        id: Date.now() + 1,
+        id: (Date.now() + 1).toString(),
         text: "Error communicating with AI service.",
         sender: "bot",
       };
@@ -289,7 +289,7 @@ export default function ChatPage() {
       ) {
         // Convert the database messages to the format our UI expects
         const uiMessages: Message[] = conversation.messages.map((msg: any) => ({
-          id: parseInt(msg.id.replace(/-/g, "")),
+          id: msg.id.toString(),
           text: msg.content,
           sender: msg.role === "user" ? "user" : "bot",
         }));
@@ -503,9 +503,9 @@ export default function ChatPage() {
               </div>
             ) : (
               <div className="space-y-6 pb-24">
-                {messages.map((message) => (
+                {messages.map((message, index) => (
                   <div
-                    key={message.id}
+                    key={`${message.id}-${index}`}
                     className={`
                       px-4 py-2
                       ${message.sender === "bot" ? "bg-gray-50" : ""}
