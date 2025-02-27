@@ -137,6 +137,9 @@ export default function ChatPage() {
         text: aiData.message || "No response from API",
         sender: "bot",
       };
+
+      // Set isLoading to false before updating messages to prevent loading indicator from showing with response
+      setIsLoading(false);
       setMessages((prev) => [...prev, botMessage]);
 
       // Then, store the conversation and messages in the database
@@ -215,9 +218,9 @@ export default function ChatPage() {
         text: "Error communicating with AI service.",
         sender: "bot",
       };
-      setMessages((prev) => [...prev, botMessage]);
-    } finally {
+      // Set isLoading to false before updating messages for error case too
       setIsLoading(false);
+      setMessages((prev) => [...prev, botMessage]);
     }
   };
 
