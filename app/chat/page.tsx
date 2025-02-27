@@ -1,42 +1,15 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import {
-  Send,
-  User,
-  Bot,
-  Home,
-  Plus,
-  Bell,
-  Upload,
-  Paperclip,
-} from "lucide-react";
-import Link from "next/link";
 import ProfilePopup from "@/components/ProfilePopup";
-
-interface ChatMessage {
-  role: "user" | "assistant" | "system";
-  content: string;
-}
-
-interface Message {
-  id: string;
-  text: string;
-  sender: "user" | "bot";
-}
-
-interface Chat {
-  id: string;
-  title: string;
-  messages: {
-    id: string;
-    content: string;
-    role: string;
-    createdAt: string;
-  }[];
-  createdAt: string;
-  updatedAt: string;
-}
+import { Chat, ChatMessage, Message } from "./types";
+import ChatSidebar from "./components/ChatSidebar";
+import ChatHeader from "./components/ChatHeader";
+import ChatMessageComponent from "./components/ChatMessage";
+import LoadingIndicator from "./components/LoadingIndicator";
+import MessageInput from "./components/MessageInput";
+import WelcomeScreen from "./components/WelcomeScreen";
+import DragDropOverlay from "./components/DragDropOverlay";
 
 export default function ChatPage() {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -117,7 +90,7 @@ export default function ChatPage() {
   };
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    // Remove file upload handling
+    // File upload handling removed
   };
 
   const handleAttachmentClick = () => {
@@ -320,44 +293,6 @@ export default function ChatPage() {
     }
   };
 
-  const renderChatList = () => {
-    if (isLoadingChats) {
-      return (
-        <div className="p-4 text-center text-gray-500">
-          Loading conversations...
-        </div>
-      );
-    }
-
-    if (chats.length === 0) {
-      return (
-        <div className="p-4 text-center text-gray-500">
-          No conversations yet
-        </div>
-      );
-    }
-
-    return chats.map((chat) => (
-      <div
-        key={chat.id}
-        className={`p-3 hover:bg-gray-100 rounded-lg cursor-pointer ${
-          activeConversationId === chat.id ? "bg-gray-100" : ""
-        }`}
-        onClick={() => loadConversation(chat.id)}
-      >
-        <h3 className="font-medium truncate">
-          {chat.title || "New Conversation"}
-        </h3>
-        <p className="text-sm text-gray-500 truncate">
-          {chat.messages[0]?.content || "No messages"}
-        </p>
-        <p className="text-xs text-gray-400 mt-1">
-          {new Date(chat.updatedAt).toLocaleDateString()}
-        </p>
-      </div>
-    ));
-  };
-
   const handleNewChat = () => {
     setMessages([]);
     setChatHistory([]);
@@ -381,215 +316,48 @@ export default function ChatPage() {
       />
 
       {/* Drag & Drop Overlay */}
-      {isDragging && (
-        <div
-          className="fixed inset-0 bg-purple-600/20 z-50 backdrop-blur-sm"
-          onDragLeave={handleDragLeave}
-          onDragOver={handleDragOver}
-          onDrop={handleDrop}
-        >
-          <div className="h-full flex flex-col items-center justify-center text-white">
-            <div className="p-6 bg-white/10 rounded-full mb-6 backdrop-blur-md">
-              <Upload size={48} className="text-white" />
-            </div>
-            <h2 className="text-3xl font-bold mb-2">Drop your file here</h2>
-            <p className="text-white/80">We'll analyze it for you</p>
-          </div>
-        </div>
-      )}
+      <DragDropOverlay
+        isDragging={isDragging}
+        onDragLeave={handleDragLeave}
+        onDragOver={handleDragOver}
+        onDrop={handleDrop}
+      />
 
       <div className="flex h-screen">
         {/* Chat History Sidebar */}
-        <div className="w-64 bg-white border-r border-gray-200 flex flex-col">
-          <div className="h-20 flex items-center px-6 border-b border-gray-200">
-            <h1 className="text-xl font-bold text-purple-600">AI Chat</h1>
-          </div>
-          <div className="p-4 border-b border-gray-200">
-            <button
-              onClick={handleNewChat}
-              className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
-            >
-              <Plus size={20} />
-              New Chat
-            </button>
-          </div>
-          <div className="flex-1 overflow-y-auto">{renderChatList()}</div>
-        </div>
+        <ChatSidebar
+          chats={chats}
+          activeConversationId={activeConversationId}
+          isLoadingChats={isLoadingChats}
+          onNewChat={handleNewChat}
+          onSelectChat={loadConversation}
+        />
 
         {/* Main Chat Area */}
         <div className="flex-1 flex flex-col">
           {/* Top Bar */}
-          <div className="h-20 bg-white border-b border-gray-200 flex items-center justify-between px-8">
-            <Link
-              href="/"
-              className="p-3 hover:bg-gray-100 rounded-lg transition-colors"
-              title="Back to Dashboard"
-            >
-              <Home size={22} className="text-gray-600" />
-            </Link>
-            <div className="flex items-center space-x-5">
-              <button className="p-3 hover:bg-purple-50 rounded-full transition-colors">
-                <Bell
-                  size={22}
-                  className="text-gray-600 hover:text-purple-600"
-                />
-              </button>
-              <button
-                className="p-3 hover:bg-purple-50 rounded-full transition-colors"
-                onClick={() => setIsProfileOpen(true)}
-              >
-                <User
-                  size={22}
-                  className="text-gray-600 hover:text-purple-600"
-                />
-              </button>
-            </div>
-          </div>
+          <ChatHeader onProfileClick={() => setIsProfileOpen(true)} />
 
           {/* Messages Area */}
           <div className="flex-1 overflow-y-auto">
             {messages.length === 0 ? (
-              <div className="h-full flex flex-col items-center justify-center px-4">
-                <div className="text-center space-y-3 mb-8">
-                  <h2 className="text-2xl font-semibold text-gray-800">
-                    Welcome to AI Chat
-                  </h2>
-                  <p className="text-gray-600">
-                    Start a conversation by typing a message below or drop a
-                    file anywhere.
-                  </p>
-                </div>
-                {/* Centered oval input for empty state */}
-                <div className="w-full max-w-2xl">
-                  <form onSubmit={handleSendMessage} className="relative">
-                    <button
-                      type="button"
-                      onClick={handleAttachmentClick}
-                      className="absolute left-2 top-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors"
-                    >
-                      <Paperclip
-                        size={18}
-                        className="text-gray-400 hover:text-purple-600 transition-colors"
-                      />
-                    </button>
-                    <input
-                      type="text"
-                      value={inputMessage}
-                      onChange={(e) => setInputMessage(e.target.value)}
-                      onKeyDown={handleKeyDown}
-                      placeholder="Type your message..."
-                      className="w-full pl-14 pr-16 py-4 bg-white rounded-full border border-gray-200 focus:border-purple-500 focus:ring-2 focus:ring-purple-100 focus:outline-none text-gray-900 placeholder:text-gray-400 shadow-sm hover:shadow transition-all"
-                    />
-                    <button
-                      type="submit"
-                      disabled={!inputMessage.trim() || isLoading}
-                      className={`
-                        absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center rounded-full
-                        ${
-                          inputMessage.trim() && !isLoading
-                            ? "bg-purple-600 hover:bg-purple-700 text-white shadow-md hover:shadow-lg transform transition-all hover:scale-105"
-                            : "bg-gray-100 text-gray-400 cursor-not-allowed"
-                        }
-                        transition-all
-                      `}
-                    >
-                      <Send
-                        size={18}
-                        className="transform translate-x-[-1px] translate-y-[1px]"
-                      />
-                    </button>
-                  </form>
-                </div>
-              </div>
+              <WelcomeScreen
+                inputMessage={inputMessage}
+                isLoading={isLoading}
+                onInputChange={setInputMessage}
+                onSendMessage={handleSendMessage}
+                onAttachmentClick={handleAttachmentClick}
+                onKeyDown={handleKeyDown}
+              />
             ) : (
               <div className="space-y-6 pb-24">
                 {messages.map((message, index) => (
-                  <div
+                  <ChatMessageComponent
                     key={`${message.id}-${index}`}
-                    className={`
-                      px-4 py-2
-                      ${message.sender === "bot" ? "bg-gray-50" : ""}
-                    `}
-                  >
-                    <div
-                      className={`max-w-3xl mx-auto flex ${
-                        message.sender === "user"
-                          ? "justify-end"
-                          : "justify-start"
-                      } gap-4`}
-                    >
-                      {message.sender === "bot" && (
-                        <div className="flex-shrink-0 w-8 h-8 mt-1">
-                          <div className="w-8 h-8 rounded-full bg-purple-700 flex items-center justify-center">
-                            <Bot className="w-5 h-5 text-white" />
-                          </div>
-                        </div>
-                      )}
-                      <div
-                        className={`${
-                          message.sender === "user"
-                            ? "flex-shrink-0 max-w-[80%] ml-auto"
-                            : "flex-1 max-w-[80%]"
-                        } space-y-1`}
-                      >
-                        <p
-                          className={`font-medium text-xs ${
-                            message.sender === "user"
-                              ? "text-right text-gray-600"
-                              : "text-gray-600"
-                          }`}
-                        >
-                          {message.sender === "user" ? "You" : "Assistant"}
-                        </p>
-                        <div
-                          className={`prose prose-purple w-auto inline-block ${
-                            message.sender === "user"
-                              ? "bg-purple-600 text-white float-right rounded-2xl rounded-tr-none shadow-sm chat-bubble-user px-3 py-2"
-                              : "text-gray-800 rounded-none chat-bubble-bot pl-0 pt-2"
-                          }`}
-                        >
-                          {message.text}
-                        </div>
-                      </div>
-                      {message.sender === "user" && (
-                        <div className="flex-shrink-0 w-8 h-8 mt-1">
-                          <div className="w-8 h-8 rounded-full bg-purple-600 flex items-center justify-center">
-                            <User className="w-5 h-5 text-white" />
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
+                    message={message}
+                  />
                 ))}
-                {isLoading && (
-                  <div className="px-4 py-2">
-                    <div className="max-w-3xl mx-auto flex justify-start gap-4">
-                      <div className="flex-shrink-0 w-8 h-8 mt-1">
-                        <div className="w-8 h-8 rounded-full bg-purple-700 flex items-center justify-center">
-                          <Bot className="w-5 h-5 text-white" />
-                        </div>
-                      </div>
-                      <div className="max-w-[80%]">
-                        <div className="text-gray-900 rounded-none pl-0 pt-2 inline-block chat-bubble-bot">
-                          <div className="flex space-x-2">
-                            <div
-                              className="h-3 w-3 bg-purple-300 rounded-full animate-bounce"
-                              style={{ animationDelay: "0ms" }}
-                            />
-                            <div
-                              className="h-3 w-3 bg-purple-500 rounded-full animate-bounce"
-                              style={{ animationDelay: "150ms" }}
-                            />
-                            <div
-                              className="h-3 w-3 bg-purple-700 rounded-full animate-bounce"
-                              style={{ animationDelay: "300ms" }}
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
+                {isLoading && <LoadingIndicator />}
                 <div ref={messagesEndRef} />
               </div>
             )}
@@ -599,44 +367,14 @@ export default function ChatPage() {
           {messages.length > 0 && (
             <div className="fixed bottom-5 left-64 right-0 p-6 bg-gradient-to-t from-gray-50 via-gray-50 to-transparent pb-4 pt-10">
               <div className="max-w-3xl mx-auto">
-                <form onSubmit={handleSendMessage} className="relative">
-                  <button
-                    type="button"
-                    onClick={handleAttachmentClick}
-                    className="absolute left-2 top-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors"
-                  >
-                    <Paperclip
-                      size={18}
-                      className="text-gray-400 hover:text-purple-600 transition-colors"
-                    />
-                  </button>
-                  <input
-                    type="text"
-                    value={inputMessage}
-                    onChange={(e) => setInputMessage(e.target.value)}
-                    onKeyDown={handleKeyDown}
-                    placeholder="Type your message..."
-                    className="w-full pl-14 pr-16 py-4 bg-white rounded-full shadow-lg hover:shadow-xl focus:ring-2 focus:ring-purple-100 focus:outline-none text-gray-900 placeholder:text-gray-400 border border-gray-100 focus:border-purple-300 transition-all"
-                  />
-                  <button
-                    type="submit"
-                    disabled={!inputMessage.trim() || isLoading}
-                    className={`
-                      absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center rounded-full
-                      ${
-                        inputMessage.trim() && !isLoading
-                          ? "bg-purple-600 hover:bg-purple-700 text-white shadow-md hover:shadow-lg transform transition-all hover:scale-105"
-                          : "bg-gray-100 text-gray-400 cursor-not-allowed"
-                      }
-                      transition-all
-                    `}
-                  >
-                    <Send
-                      size={18}
-                      className="transform translate-x-[-1px] translate-y-[1px]"
-                    />
-                  </button>
-                </form>
+                <MessageInput
+                  inputMessage={inputMessage}
+                  isLoading={isLoading}
+                  onInputChange={setInputMessage}
+                  onSendMessage={handleSendMessage}
+                  onAttachmentClick={handleAttachmentClick}
+                  onKeyDown={handleKeyDown}
+                />
               </div>
             </div>
           )}
