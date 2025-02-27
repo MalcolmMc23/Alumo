@@ -597,7 +597,7 @@ export default function ChatPage() {
 
           {/* Fixed Input Area when chat has messages */}
           {messages.length > 0 && (
-            <div className="fixed bottom-0 left-64 right-0 p-6 bg-gradient-to-t from-gray-50 via-gray-50 to-transparent pb-4 pt-10">
+            <div className="fixed bottom-5 left-64 right-0 p-6 bg-gradient-to-t from-gray-50 via-gray-50 to-transparent pb-4 pt-10">
               <div className="max-w-3xl mx-auto">
                 <form onSubmit={handleSendMessage} className="relative">
                   <button
@@ -631,7 +631,10 @@ export default function ChatPage() {
                       transition-all
                     `}
                   >
-                    <Send size={18} className="transform translate-x-[1px]" />
+                    <Send
+                      size={18}
+                      className="transform translate-x-[-1px] translate-y-[1px]"
+                    />
                   </button>
                 </form>
               </div>
