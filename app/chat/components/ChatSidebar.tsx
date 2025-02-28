@@ -50,7 +50,7 @@ const ChatSidebar: FC<ChatSidebarProps> = ({
       <div
         key={chat.id}
         className={`
-          flex items-center space-x-3 px-4 py-2.5 rounded-lg cursor-pointer
+          flex items-center px-4 py-2.5 rounded-lg cursor-pointer
           ${
             activeConversationId === chat.id
               ? "bg-purple-50 text-purple-700"
@@ -59,14 +59,9 @@ const ChatSidebar: FC<ChatSidebarProps> = ({
         `}
         onClick={() => onSelectChat(chat.id)}
       >
-        <div className="flex-1 min-w-0">
-          <h3 className="font-medium truncate">
-            {chat.title || "New Conversation"}
-          </h3>
-          <p className="text-sm truncate">
-            {chat.messages[0]?.content || "No messages"}
-          </p>
-        </div>
+        <span className="font-medium truncate">
+          {chat.title || "New Conversation"}
+        </span>
       </div>
     ));
   };
@@ -85,7 +80,9 @@ const ChatSidebar: FC<ChatSidebarProps> = ({
           New Chat
         </button>
       </div>
-      <div className="flex-1 overflow-y-auto">{renderChatList()}</div>
+      <div className="flex-1 overflow-y-auto p-2 space-y-1">
+        {renderChatList()}
+      </div>
     </div>
   );
 };
