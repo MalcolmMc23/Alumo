@@ -49,27 +49,24 @@ const ChatSidebar: FC<ChatSidebarProps> = ({
     return chats.map((chat) => (
       <div
         key={chat.id}
-        className={`p-3 hover:bg-purple-700/10 rounded-lg cursor-pointer transition-colors ${
-          activeConversationId === chat.id ? "bg-purple-700/10" : ""
-        }`}
+        className={`
+          flex items-center space-x-3 px-4 py-2.5 rounded-lg cursor-pointer
+          ${
+            activeConversationId === chat.id
+              ? "bg-purple-50 text-purple-700"
+              : "text-gray-600 hover:bg-purple-50 hover:text-purple-700"
+          }
+        `}
         onClick={() => onSelectChat(chat.id)}
       >
-        <h3
-          className={`font-medium truncate ${
-            activeConversationId === chat.id ? "text-purple-700" : ""
-          }`}
-        >
-          {chat.title || "New Conversation"}
-        </h3>
-        <p
-          className={`text-sm truncate ${
-            activeConversationId === chat.id
-              ? "text-purple-700"
-              : "text-gray-500"
-          }`}
-        >
-          {chat.messages[0]?.content || "No messages"}
-        </p>
+        <div className="flex-1 min-w-0">
+          <h3 className="font-medium truncate">
+            {chat.title || "New Conversation"}
+          </h3>
+          <p className="text-sm truncate">
+            {chat.messages[0]?.content || "No messages"}
+          </p>
+        </div>
       </div>
     ));
   };
