@@ -90,7 +90,291 @@ export default function ChatPage() {
   };
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    // File upload handling removed
+    if (!e.target.files || e.target.files.length === 0) return;
+
+    const file = e.target.files[0];
+    // Check if file is a resume (PDF, DOC, DOCX, TXT, HTML)
+    const validTypes = [
+      "application/pdf",
+      "application/msword",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "text/plain",
+      "text/html",
+      "application/html",
+    ];
+
+    if (!validTypes.includes(file.type)) {
+      // Add user message about the file upload attempt
+      const userMessage: Message = {
+        id: Date.now().toString(),
+        text: `I've uploaded a file: ${file.name}`,
+        sender: "user",
+      };
+
+      setMessages((prev) => [...prev, userMessage]);
+
+      // Add AI error message about unsupported file type
+      const botMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        text: `I'm sorry, but I can't process this file type. Please upload a resume in one of the following formats: PDF, DOC, DOCX, TXT, or HTML. These formats allow me to properly analyze your resume and provide helpful feedback.`,
+        sender: "bot",
+      };
+
+      setMessages((prev) => [...prev, botMessage]);
+
+      // Store conversation in database
+      const messagesToSave = [
+        { content: `I've uploaded a file: ${file.name}`, role: "user" },
+        { content: botMessage.text, role: "assistant" },
+      ];
+
+      if (activeConversationId) {
+        // Update existing conversation
+        fetch(`/api/chat/${activeConversationId}`, {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            messages: messagesToSave,
+          }),
+        })
+          .then((response) => {
+            if (response.ok) {
+              console.log("Conversation updated with file type error");
+              // Refresh chat list
+              return fetch("/api/chat");
+            }
+          })
+          .then((response) => {
+            if (response && response.ok) {
+              return response.json();
+            }
+          })
+          .then((data) => {
+            if (data) setChats(data);
+          })
+          .catch((error) => {
+            console.error("Error updating conversation:", error);
+          });
+      } else {
+        // Create new conversation
+        fetch("/api/chat", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            messages: messagesToSave,
+          }),
+        })
+          .then((response) => {
+            if (response.ok) {
+              return response.json();
+            }
+          })
+          .then((newConversation) => {
+            if (newConversation) {
+              console.log(
+                "New conversation created with file type error",
+                newConversation
+              );
+              setActiveConversationId(newConversation.id);
+              // Refresh chat list
+              return fetch("/api/chat");
+            }
+          })
+          .then((response) => {
+            if (response && response.ok) {
+              return response.json();
+            }
+          })
+          .then((data) => {
+            if (data) setChats(data);
+          })
+          .catch((error) => {
+            console.error("Error creating conversation:", error);
+          });
+      }
+
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+
+      return;
+    }
+
+    // Create form data
+    const formData = new FormData();
+    formData.append("file", file);
+
+    // Set loading state
+    setIsLoading(true);
+
+    // Upload resume
+    fetch("/api/chat/resume", {
+      method: "POST",
+      body: formData,
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        if (data.success) {
+          // Add user message about the resume
+          const userMessage: Message = {
+            id: Date.now().toString(),
+            text: `I've uploaded my resume: ${file.name}`,
+            sender: "user",
+          };
+
+          setMessages((prev) => [...prev, userMessage]);
+
+          // Now send the resume text to the AI
+          return fetch("/api/chat/openrouter", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              message: `I've uploaded my resume. Here's the content: ${data.resumeText}. Please analyze it and provide feedback or suggestions.`,
+              history: chatHistory,
+            }),
+          });
+        } else {
+          throw new Error(data.error || "Failed to process resume");
+        }
+      })
+      .then((response) => response.json())
+      .then((aiData) => {
+        setChatHistory(aiData.history || []);
+
+        const botMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          text:
+            aiData.message ||
+            "I couldn't analyze the resume properly. Please try again or upload a different file format.",
+          sender: "bot",
+        };
+
+        setMessages((prev) => [...prev, botMessage]);
+
+        // Store conversation in database if necessary
+        const messagesToSave = [
+          { content: `I've uploaded my resume: ${file.name}`, role: "user" },
+          { content: botMessage.text, role: "assistant" },
+        ];
+
+        if (activeConversationId) {
+          // Update existing conversation
+          fetch(`/api/chat/${activeConversationId}`, {
+            method: "PATCH",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              messages: messagesToSave,
+            }),
+          })
+            .then((response) => {
+              if (response.ok) {
+                console.log("Conversation updated with resume analysis");
+                // Refresh chat list
+                return fetch("/api/chat");
+              }
+            })
+            .then((response) => {
+              if (response && response.ok) {
+                return response.json();
+              }
+            })
+            .then((data) => {
+              if (data) setChats(data);
+            })
+            .catch((error) => {
+              console.error("Error updating conversation:", error);
+            });
+        } else {
+          // Create new conversation
+          fetch("/api/chat", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              messages: messagesToSave,
+            }),
+          })
+            .then((response) => {
+              if (response.ok) {
+                return response.json();
+              }
+            })
+            .then((newConversation) => {
+              if (newConversation) {
+                console.log(
+                  "New conversation created with resume analysis",
+                  newConversation
+                );
+                setActiveConversationId(newConversation.id);
+                // Refresh chat list
+                return fetch("/api/chat");
+              }
+            })
+            .then((response) => {
+              if (response && response.ok) {
+                return response.json();
+              }
+            })
+            .then((data) => {
+              if (data) setChats(data);
+            })
+            .catch((error) => {
+              console.error("Error creating conversation:", error);
+            });
+        }
+      })
+      .catch((error) => {
+        console.error("Error processing resume:", error);
+
+        // Add error message from AI
+        const botMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          text: `I encountered an error while processing your resume: ${error.message}. Please try uploading a different file or format (PDF, DOC, DOCX, TXT, or HTML).`,
+          sender: "bot",
+        };
+
+        setMessages((prev) => [...prev, botMessage]);
+
+        // Store error message in conversation
+        const messagesToSave = [
+          { content: `I've uploaded my resume: ${file.name}`, role: "user" },
+          { content: botMessage.text, role: "assistant" },
+        ];
+
+        if (activeConversationId) {
+          fetch(`/api/chat/${activeConversationId}`, {
+            method: "PATCH",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              messages: messagesToSave,
+            }),
+          }).catch((err) =>
+            console.error(
+              "Error updating conversation with error message:",
+              err
+            )
+          );
+        }
+      })
+      .finally(() => {
+        setIsLoading(false);
+        // Reset file input
+        if (fileInputRef.current) {
+          fileInputRef.current.value = "";
+        }
+      });
   };
 
   const handleAttachmentClick = () => {
