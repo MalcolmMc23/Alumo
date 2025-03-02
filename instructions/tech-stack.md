@@ -18,13 +18,10 @@ CI/CD pipeline triggered on code pushes for automated testing and container buil
 
 Combines React’s component-based architecture with Next.js for server-side rendering and improved performance.
 Facilitates SEO for public-facing parts of the platform (e.g., landing pages).
-Styling & UI:
-
-Could use a design system library (e.g., Material-UI) or custom styling with CSS/Sass to maintain brand consistency.
-Key Responsibilities:
-
-Rendering job listings, alumni profiles, and AI-driven résumé feedback.
-Handling user interactions, search queries, and form submissions.
+Styling & UI: Tailwind CSS
+Utility-first styling to quickly build and customize layouts and components.
+Straightforward to integrate with Next.js (install via npm install -D tailwindcss postcss autoprefixer and configure tailwind.config.js).
+Offers responsive breakpoints, theming, and easy customization.
 
 4.  Backend Stack
     Runtime & Framework: Node.js / Express (or Next.js API routes)
