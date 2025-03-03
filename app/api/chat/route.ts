@@ -61,6 +61,11 @@ export async function POST(req: NextRequest) {
 
 export async function GET(req: Request) {
   try {
+    const { searchParams } = new URL(req.url);
+    const page = parseInt(searchParams.get('page') || '1');
+    const limit = parseInt(searchParams.get('limit') || '20');
+    const skip = (page - 1) * limit;
+    
     const session = await getServerSession(authOptions);
     
     if (!session?.user?.email) {
@@ -75,16 +80,26 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
+    // First, get the total count of conversations for pagination info
+    const totalCount = await prisma.conversation.count({
+      where: { userId: user.id },
+    });
+
+    // Then, fetch the conversations with just the most recent message for preview
     const chats = await prisma.conversation.findMany({
       where: { userId: user.id },
       include: {
         messages: {
-          orderBy: { createdAt: "asc" },
+          orderBy: { createdAt: "desc" },
+          take: 1, // Only get the most recent message for preview
         },
       },
       orderBy: { updatedAt: "desc" },
+      skip,
+      take: limit,
     });
 
+    // Return just the chats array to maintain compatibility with the existing code
     return NextResponse.json(chats);
   } catch (error) {
     console.error("Error fetching chats:", error);

@@ -88,6 +88,11 @@ export async function GET(
 ) {
   try {
     const conversationId = params.id;
+    const { searchParams } = new URL(req.url);
+    const page = parseInt(searchParams.get('page') || '1');
+    const limit = parseInt(searchParams.get('limit') || '50');
+    const skip = (page - 1) * limit;
+    const loadAll = searchParams.get('loadAll') === 'true';
 
     // Get the current user from the session
     const session = await getServerSession(authOptions);
@@ -105,24 +110,47 @@ export async function GET(
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    // Get the conversation with all its messages
+    // First, get the conversation without messages to check access
     const conversation = await prisma.conversation.findUnique({
       where: { 
         id: conversationId,
         userId: user.id,
       },
-      include: {
-        messages: {
-          orderBy: { createdAt: 'asc' },
-        },
-      },
+      select: {
+        id: true,
+        title: true,
+        createdAt: true,
+        updatedAt: true,
+      }
     });
 
     if (!conversation) {
       return NextResponse.json({ error: "Conversation not found" }, { status: 404 });
     }
 
-    return NextResponse.json(conversation);
+    // Then, get the total count of messages
+    const totalMessages = await prisma.message.count({
+      where: { conversationId }
+    });
+
+    // Get messages with pagination unless loadAll is true
+    const messages = await prisma.message.findMany({
+      where: { conversationId },
+      orderBy: { createdAt: 'asc' },
+      ...(loadAll ? {} : { skip, take: limit }),
+    });
+
+    return NextResponse.json({
+      ...conversation,
+      messages,
+      pagination: {
+        total: totalMessages,
+        page,
+        limit,
+        totalPages: Math.ceil(totalMessages / limit),
+        hasMore: skip + limit < totalMessages
+      }
+    });
   } catch (error) {
     console.error('Error fetching conversation:', error);
     return NextResponse.json({ error: 'Error fetching conversation' }, { status: 500 });

@@ -32,7 +32,7 @@ export default function ChatPage() {
     const fetchChats = async () => {
       try {
         setIsLoadingChats(true);
-        const response = await fetch("/api/chat");
+        const response = await fetch("/api/chat?page=1&limit=20");
 
         if (!response.ok) {
           throw new Error("Failed to fetch chats");
@@ -51,7 +51,7 @@ export default function ChatPage() {
   }, []);
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    messagesEndRef.current?.scrollIntoView({ behavior: "auto" });
   };
 
   useEffect(() => {
@@ -534,7 +534,8 @@ export default function ChatPage() {
       setActiveConversationId(chatId);
 
       // Fetch the full conversation with all messages from the server
-      const response = await fetch(`/api/chat/${chatId}`);
+      // Use loadAll=true to get all messages at once for the active conversation
+      const response = await fetch(`/api/chat/${chatId}?loadAll=true`);
 
       if (!response.ok) {
         throw new Error("Failed to load conversation");
@@ -555,6 +556,9 @@ export default function ChatPage() {
         }));
 
         setMessages(uiMessages);
+
+        // Force an immediate scroll to the bottom
+        setTimeout(() => scrollToBottom(), 0);
 
         // Also update chat history for the AI
         const aiChatHistory: ChatMessage[] = conversation.messages.map(
