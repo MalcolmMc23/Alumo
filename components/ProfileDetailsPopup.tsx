@@ -32,9 +32,28 @@ export default function ProfileDetailsPopup({
   const [userData, setUserData] = useState<UserData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [hasRendered, setHasRendered] = useState(false);
 
+  // Once the component is mounted, mark it as rendered
   useEffect(() => {
-    if (isOpen) {
+    setHasRendered(true);
+  }, []);
+
+  // Add keyboard listener for Escape key
+  useEffect(() => {
+    const handleEscKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && isOpen) {
+        onClose();
+      }
+    };
+
+    window.addEventListener("keydown", handleEscKey);
+    return () => window.removeEventListener("keydown", handleEscKey);
+  }, [isOpen, onClose]);
+
+  // Fetch user data when popup opens
+  useEffect(() => {
+    if (isOpen && hasRendered) {
       const fetchUserData = async () => {
         setLoading(true);
         setError(null);
@@ -58,15 +77,30 @@ export default function ProfileDetailsPopup({
 
       fetchUserData();
     }
-  }, [isOpen]);
+  }, [isOpen, hasRendered]);
 
   if (!isOpen) return null;
 
+  // Handle click outside to close
+  const handleBackdropClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onClose();
+  };
+
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 animate-fade-in p-4">
-      <div className="bg-white rounded-2xl w-full max-w-2xl p-8 relative animate-zoom-in">
+    <div
+      className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 animate-fade-in p-4"
+      onClick={handleBackdropClick}
+    >
+      <div
+        className="bg-white rounded-2xl w-full max-w-2xl p-8 relative animate-zoom-in"
+        onClick={(e) => e.stopPropagation()}
+      >
         <button
-          onClick={onClose}
+          onClick={(e) => {
+            e.stopPropagation();
+            onClose();
+          }}
           className="absolute right-6 top-6 text-gray-400 hover:text-gray-600 p-2 hover:bg-gray-100 rounded-full"
         >
           <X size={24} />
@@ -167,7 +201,10 @@ export default function ProfileDetailsPopup({
 
         <div className="mt-8 text-center">
           <button
-            onClick={onClose}
+            onClick={(e) => {
+              e.stopPropagation();
+              onClose();
+            }}
             className="px-6 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors"
           >
             Close

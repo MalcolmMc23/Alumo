@@ -22,7 +22,10 @@ const ChatHeader: FC<ChatHeaderProps> = ({ onProfileClick }) => {
         </button>
         <button
           className="p-3 hover:bg-purple-50 rounded-full transition-colors"
-          onClick={onProfileClick}
+          onClick={(e) => {
+            e.stopPropagation();
+            onProfileClick();
+          }}
         >
           <User size={22} className="text-gray-600 hover:text-purple-600" />
         </button>
