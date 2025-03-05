@@ -124,7 +124,7 @@ export async function POST(request: Request) {
     try {
       // Send request to OpenAI with fallback approach
       const completion = await openai.chat.completions.create({
-        model: 'anthropic/claude-3-haiku',
+        model: 'google/gemini-2.0-flash-lite-001',
         messages: messages as any,
       });
 
