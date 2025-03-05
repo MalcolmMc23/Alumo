@@ -10,6 +10,7 @@ import LoadingIndicator from "./components/LoadingIndicator";
 import MessageInput from "./components/MessageInput";
 import WelcomeScreen from "./components/WelcomeScreen";
 import DragDropOverlay from "./components/DragDropOverlay";
+import ResumeIndicator from "./components/ResumeIndicator";
 
 export default function ChatPage() {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -26,6 +27,7 @@ export default function ChatPage() {
   const [activeConversationId, setActiveConversationId] = useState<
     string | null
   >(null);
+  const [hasResume, setHasResume] = useState(false);
 
   // Fetch chats from the database
   useEffect(() => {
@@ -48,6 +50,26 @@ export default function ChatPage() {
     };
 
     fetchChats();
+  }, []);
+
+  // Fetch user profile to check for resume
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      try {
+        const response = await fetch("/api/user");
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch user profile");
+        }
+
+        const userData = await response.json();
+        setHasResume(!!userData.hasResume);
+      } catch (error) {
+        console.error("Error fetching user profile:", error);
+      }
+    };
+
+    fetchUserProfile();
   }, []);
 
   const scrollToBottom = () => {
@@ -591,48 +613,68 @@ export default function ChatPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50" onDragEnter={handleDragEnter}>
-      <ProfilePopup
-        isOpen={isProfileOpen}
-        onClose={() => setIsProfileOpen(false)}
+    <div
+      className="flex h-screen bg-gray-50"
+      onDragEnter={handleDragEnter}
+      onDragOver={handleDragOver}
+      onDrop={handleDrop}
+    >
+      <ChatSidebar
+        chats={chats}
+        activeConversationId={activeConversationId}
+        onSelectChat={loadConversation}
+        onNewChat={handleNewChat}
+        isLoadingChats={isLoadingChats}
       />
-
-      {/* Hidden file input */}
       <input
         type="file"
         ref={fileInputRef}
         onChange={handleFileSelect}
         className="hidden"
-        multiple
+        accept=".pdf,.doc,.docx,.txt,.html"
       />
-
-      {/* Drag & Drop Overlay */}
-      <DragDropOverlay
-        isDragging={isDragging}
-        onDragLeave={handleDragLeave}
-        onDragOver={handleDragOver}
-        onDrop={handleDrop}
+      <ProfilePopup
+        isOpen={isProfileOpen}
+        onClose={() => setIsProfileOpen(false)}
       />
+      <main className="flex-1 flex flex-col max-h-screen overflow-hidden">
+        <ChatHeader onProfileClick={() => setIsProfileOpen(true)} />
+        <ResumeIndicator isVisible={hasResume} />
 
-      <div className="flex h-screen">
-        {/* Chat History Sidebar */}
-        <ChatSidebar
-          chats={chats}
-          activeConversationId={activeConversationId}
-          isLoadingChats={isLoadingChats}
-          onNewChat={handleNewChat}
-          onSelectChat={loadConversation}
-        />
+        <div
+          className={`flex-1 overflow-y-auto p-4 sm:p-6 ${
+            isDragging ? "bg-purple-50" : ""
+          }`}
+          onDragLeave={handleDragLeave}
+        >
+          {messages.length === 0 ? (
+            <WelcomeScreen
+              inputMessage={inputMessage}
+              isLoading={isLoading}
+              onInputChange={setInputMessage}
+              onSendMessage={handleSendMessage}
+              onAttachmentClick={handleAttachmentClick}
+              onKeyDown={handleKeyDown}
+            />
+          ) : (
+            <div className="space-y-6 pb-24">
+              {messages.map((message, index) => (
+                <ChatMessageComponent
+                  key={`${message.id}-${index}`}
+                  message={message}
+                />
+              ))}
+              {isLoading && <LoadingIndicator />}
+              <div ref={messagesEndRef} />
+            </div>
+          )}
+        </div>
 
-        {/* Main Chat Area */}
-        <div className="flex-1 flex flex-col">
-          {/* Top Bar */}
-          <ChatHeader onProfileClick={() => setIsProfileOpen(true)} />
-
-          {/* Messages Area */}
-          <div className="flex-1 overflow-y-auto">
-            {messages.length === 0 ? (
-              <WelcomeScreen
+        {/* Fixed Input Area when chat has messages */}
+        {messages.length > 0 && (
+          <div className="fixed bottom-5 left-64 right-0 p-6 bg-gradient-to-t from-gray-50 via-gray-50 to-transparent pb-4 pt-10">
+            <div className="max-w-3xl mx-auto">
+              <MessageInput
                 inputMessage={inputMessage}
                 isLoading={isLoading}
                 onInputChange={setInputMessage}
@@ -640,37 +682,18 @@ export default function ChatPage() {
                 onAttachmentClick={handleAttachmentClick}
                 onKeyDown={handleKeyDown}
               />
-            ) : (
-              <div className="space-y-6 pb-24">
-                {messages.map((message, index) => (
-                  <ChatMessageComponent
-                    key={`${message.id}-${index}`}
-                    message={message}
-                  />
-                ))}
-                {isLoading && <LoadingIndicator />}
-                <div ref={messagesEndRef} />
-              </div>
-            )}
-          </div>
-
-          {/* Fixed Input Area when chat has messages */}
-          {messages.length > 0 && (
-            <div className="fixed bottom-5 left-64 right-0 p-6 bg-gradient-to-t from-gray-50 via-gray-50 to-transparent pb-4 pt-10">
-              <div className="max-w-3xl mx-auto">
-                <MessageInput
-                  inputMessage={inputMessage}
-                  isLoading={isLoading}
-                  onInputChange={setInputMessage}
-                  onSendMessage={handleSendMessage}
-                  onAttachmentClick={handleAttachmentClick}
-                  onKeyDown={handleKeyDown}
-                />
-              </div>
             </div>
-          )}
-        </div>
-      </div>
+          </div>
+        )}
+      </main>
+      {isDragging && (
+        <DragDropOverlay
+          isDragging={isDragging}
+          onDragLeave={handleDragLeave}
+          onDragOver={handleDragOver}
+          onDrop={handleDrop}
+        />
+      )}
     </div>
   );
 }

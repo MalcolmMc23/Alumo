@@ -22,6 +22,15 @@ model User {
   location      String?
   skills        String[]       @default([])
   linkedInProfile String?
+  
+  // New onboarding fields
+  educationLevel String?
+  careerGoals    String?
+  hasResume      Boolean       @default(false)
+  resumeText     String?       @db.Text
+  resumeFileName String?
+  resumeFileType String?
+  
   conversations Conversation[]
 
   @@map("user")

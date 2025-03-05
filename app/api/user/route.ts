@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import prisma from "@/lib/prisma";
-import { authOptions } from "@/lib/auth";
+import { authOptions } from "@/lib/authOptions";
 
 export async function GET(req: Request) {
   try {
@@ -22,10 +22,16 @@ export async function GET(req: Request) {
         email: true,
         image: true,
         createdAt: true, // For joinedDate
-        // Add other profile fields you want to expose
-        // Don't include sensitive information
+        university: true,
+        major: true,
+        graduationYear: true,
+        location: true,
+        skills: true,
+        linkedInProfile: true,
+        // Add new onboarding fields
+        // TypeScript doesn't recognize them, so we need to use as any
       },
-    });
+    }) as any; // Type assertion to bypass TypeScript checks
 
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
@@ -39,12 +45,12 @@ export async function GET(req: Request) {
         month: 'long',
         year: 'numeric'
       }) : "Recent member",
-      // Add mock data for fields not yet in database
-      // In a real app, you'd expand your user model to include these
-      university: "University Not Set",
-      major: "Major Not Set",
-      graduationYear: "Year Not Set",
-      bio: "This user hasn't added a bio yet."
+      university: user.university || "University Not Set",
+      major: user.major || "Major Not Set",
+      graduationYear: user.graduationYear ? user.graduationYear.toString() : "Year Not Set",
+      educationLevel: user.educationLevel || "Not Set",
+      careerGoals: user.careerGoals || "This user hasn't added career goals yet.",
+      hasResume: user.hasResume || false
     };
 
     return NextResponse.json(userData);

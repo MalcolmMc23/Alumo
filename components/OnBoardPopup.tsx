@@ -7,6 +7,8 @@ import {
   ChevronLeft,
   GraduationCap,
   Upload,
+  FileCheck,
+  AlertCircle,
 } from "lucide-react";
 
 interface OnBoardPopupProps {
@@ -21,6 +23,9 @@ interface FormData {
   careerGoals: string;
   hasResume: boolean;
   resumeFile: File | null;
+  resumeText: string;
+  resumeFileName: string;
+  resumeFileType: string;
 }
 
 const educationLevels = [
@@ -46,7 +51,12 @@ export default function OnBoardPopup({ isOpen, onClose }: OnBoardPopupProps) {
     careerGoals: "",
     hasResume: false,
     resumeFile: null,
+    resumeText: "",
+    resumeFileName: "",
+    resumeFileType: "",
   });
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadError, setUploadError] = useState("");
 
   if (!isOpen) return null;
 
@@ -60,8 +70,8 @@ export default function OnBoardPopup({ isOpen, onClose }: OnBoardPopupProps) {
     if (step < totalSteps) {
       setStep(step + 1);
     } else {
-      console.log("Form submitted:", formData);
-      onClose();
+      // Submit all user data
+      submitUserData();
     }
   };
 
@@ -71,19 +81,114 @@ export default function OnBoardPopup({ isOpen, onClose }: OnBoardPopupProps) {
     }
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+
+      // First, update the UI to show we've selected a file
       setFormData((prev) => ({
         ...prev,
-        resumeFile: e.target.files![0],
+        resumeFile: file,
+      }));
+
+      // Process the file
+      await processResumeFile(file);
+    }
+  };
+
+  const processResumeFile = async (file: File) => {
+    try {
+      setIsUploading(true);
+      setUploadError("");
+
+      // Create form data for the API call
+      const formData = new FormData();
+      formData.append("file", file);
+
+      // Call our resume processing API
+      const response = await fetch("/api/user/resume", {
+        method: "POST",
+        body: formData,
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.message || "Failed to process resume");
+      }
+
+      // Update form data with the processed resume information
+      setFormData((prev) => ({
+        ...prev,
         hasResume: true,
+        resumeText: result.resumeText,
+        resumeFileName: result.filename,
+        resumeFileType: result.fileType,
+      }));
+
+      setIsUploading(false);
+    } catch (error) {
+      console.error("Error processing resume:", error);
+      setIsUploading(false);
+      setUploadError(
+        error instanceof Error ? error.message : "Failed to process resume"
+      );
+
+      // Clear the file if there was an error
+      setFormData((prev) => ({
+        ...prev,
+        resumeFile: null,
+        hasResume: false,
       }));
     }
   };
 
   const handleSkipResume = () => {
-    setFormData((prev) => ({ ...prev, hasResume: false, resumeFile: null }));
+    setFormData((prev) => ({
+      ...prev,
+      hasResume: false,
+      resumeFile: null,
+      resumeText: "",
+      resumeFileName: "",
+      resumeFileType: "",
+    }));
     handleNext();
+  };
+
+  const submitUserData = async () => {
+    try {
+      // Prepare data for submission
+      const userData = {
+        educationLevel: formData.educationLevel,
+        major: formData.major,
+        graduationYear: formData.graduationYear,
+        careerGoals: formData.careerGoals,
+        hasResume: formData.hasResume,
+      };
+
+      // Submit to the profile API
+      const response = await fetch("/api/user/profile", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(userData),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.message || "Failed to update profile");
+      }
+
+      // Successfully submitted, close the popup
+      console.log("Onboarding complete:", result);
+      onClose();
+    } catch (error) {
+      console.error("Error submitting onboarding data:", error);
+      // Show an error message (you might want to add a UI component for this)
+      alert("Failed to complete onboarding. Please try again.");
+    }
   };
 
   const renderStep = () => {
@@ -201,16 +306,25 @@ export default function OnBoardPopup({ isOpen, onClose }: OnBoardPopupProps) {
                         ? "border-purple-600 bg-purple-50"
                         : "border-gray-300 hover:border-purple-300 hover:bg-purple-50/50"
                     }
+                    ${isUploading ? "opacity-70 pointer-events-none" : ""}
                   `}
                 >
                   <div className="flex flex-col items-center space-y-2">
-                    <div className="p-3 rounded-full bg-purple-100">
-                      <Upload size={24} className="text-purple-600" />
-                    </div>
-
-                    {formData.resumeFile ? (
+                    {isUploading ? (
                       <>
+                        <div className="p-3 rounded-full bg-purple-100">
+                          <div className="animate-spin h-6 w-6 border-2 border-purple-600 border-t-transparent rounded-full"></div>
+                        </div>
                         <span className="text-purple-700 font-medium">
+                          Processing your resume...
+                        </span>
+                      </>
+                    ) : formData.resumeFile ? (
+                      <>
+                        <div className="p-3 rounded-full bg-green-100">
+                          <FileCheck size={24} className="text-green-600" />
+                        </div>
+                        <span className="text-green-700 font-medium">
                           Resume uploaded successfully!
                         </span>
                         <span className="text-sm text-gray-500">
@@ -219,11 +333,14 @@ export default function OnBoardPopup({ isOpen, onClose }: OnBoardPopupProps) {
                       </>
                     ) : (
                       <>
+                        <div className="p-3 rounded-full bg-purple-100">
+                          <Upload size={24} className="text-purple-600" />
+                        </div>
                         <span className="text-gray-700 font-medium">
                           Click to upload your resume
                         </span>
                         <span className="text-sm text-gray-500">
-                          PDF, Word, or other document formats (max 5MB)
+                          PDF, Word, TXT, or HTML (max 5MB)
                         </span>
                       </>
                     )}
@@ -231,16 +348,25 @@ export default function OnBoardPopup({ isOpen, onClose }: OnBoardPopupProps) {
                   <input
                     id="resume-upload"
                     type="file"
-                    accept=".pdf,.doc,.docx,.txt"
+                    accept=".pdf,.doc,.docx,.txt,.html"
                     className="hidden"
                     onChange={handleFileChange}
+                    disabled={isUploading}
                   />
                 </label>
+
+                {uploadError && (
+                  <div className="text-red-500 flex items-center space-x-2 p-3 bg-red-50 rounded-lg">
+                    <AlertCircle size={16} />
+                    <span>{uploadError}</span>
+                  </div>
+                )}
 
                 <div className="text-center">
                   <button
                     onClick={handleSkipResume}
                     className="text-gray-500 hover:text-purple-600 font-medium"
+                    disabled={isUploading}
                   >
                     I don't have a resume yet
                   </button>
@@ -255,22 +381,26 @@ export default function OnBoardPopup({ isOpen, onClose }: OnBoardPopupProps) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 animate-fade-in p-4">
-      <div className="bg-white rounded-2xl w-full max-w-2xl p-12 relative animate-zoom-in">
-        <button
-          onClick={onClose}
-          className="absolute right-6 top-6 text-gray-400 hover:text-gray-600 p-2 hover:bg-gray-100 rounded-full"
-        >
-          <X size={24} />
-        </button>
-
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-purple-100 mb-6">
-            <GraduationCap size={32} className="text-purple-600" />
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl shadow-xl p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="flex justify-between items-center mb-6">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-purple-100 rounded-full">
+              <GraduationCap className="text-purple-600" size={24} />
+            </div>
+            <h2 className="text-2xl font-bold text-gray-800">
+              Student Onboarding
+            </h2>
           </div>
-          <h2 className="text-3xl font-bold text-gray-900 mb-4">
-            Tell Us About Yourself
-          </h2>
+          <button
+            onClick={onClose}
+            className="text-gray-500 hover:text-gray-700 p-2 rounded-full hover:bg-gray-100"
+          >
+            <X size={20} />
+          </button>
+        </div>
+
+        <div className="mb-6">
           <p className="text-gray-600 text-lg">
             Help us understand your needs better to provide personalized resume
             guidance

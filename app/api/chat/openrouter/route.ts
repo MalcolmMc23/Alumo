@@ -1,5 +1,9 @@
 import { NextResponse } from 'next/server';
 import OpenAI from 'openai';
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/authOptions";
+import prisma from "@/lib/prisma";
+import { getResumeContext, generateResumeSystemMessage } from "@/lib/resume-context";
 
 // Initialize the OpenAI client with OpenRouter configuration
 const openai = new OpenAI({
@@ -34,7 +38,7 @@ const availableFunctions = {
   searchForJobs: searchForJobs
 };
 
-// Function to handle tool calls
+// Function to handle tool calls (kept for future extension)
 async function executeToolCalls(toolCalls: any[]) {
   const results = [];
 
@@ -57,6 +61,23 @@ async function executeToolCalls(toolCalls: any[]) {
 
 export async function POST(request: Request) {
   try {
+    // Get the user's session
+    const session = await getServerSession(authOptions);
+    
+    // Check if the user is authenticated
+    if (!session?.user?.email) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Find the user in the database
+    const user = await prisma.user.findUnique({
+      where: { email: session.user.email },
+    });
+
+    if (!user) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+
     // Parse the request body
     const body = await request.json();
     const { message, history = [] } = body;
@@ -68,14 +89,26 @@ export async function POST(request: Request) {
       );
     }
 
+    // Get resume context if available
+    const resumeContext = await getResumeContext(user.id);
+    const resumeSystemMessage = generateResumeSystemMessage(resumeContext);
+    
     // Prepare messages array with history and new message
     let messages: ChatMessage[] = [];
     
-    // Add system message for context
+    // Add base system message for context
     messages.push({
       role: 'system',
-      content: 'You are a helpful AI assistant for Alumo, a career center platform that helps college students with job searches and connecting with alumni. Provide helpful, concise, and accurate responses. When users ask about job opportunities, job searches, or express interest in finding a job, provide appropriate job listings. If the user uploads a resume, analyze it thoroughly and provide constructive feedback on format, content, skills, and opportunities for improvement, then suggest relevant job matches based on their qualifications. Format your responses using Markdown: use **bold** for emphasis, *italics* for secondary emphasis, use proper headings with # and ##, use bullet points with - or * for lists, use numbered lists with 1. 2. 3. when appropriate, use `code blocks` for technical content, and organize complex information into clear sections with headings.'
+      content: 'You are a helpful AI assistant for Alumo, a career center platform that helps college students with job searches and connecting with alumni. Provide helpful, concise, and accurate responses. When users specifically request job opportunities or searching for jobs, provide appropriate job listings. If the user uploads a resume, analyze it thoroughly and provide constructive feedback on format, content, skills, and opportunities for improvement, then suggest relevant job matches based on their qualifications. Format your responses using Markdown: use **bold** for emphasis, *italics* for secondary emphasis, use proper headings with # and ##, use bullet points with - or * for lists, use numbered lists with 1. 2. 3. when appropriate, use `code blocks` for technical content, and organize complex information into clear sections with headings.'
     });
+    
+    // Add resume system message if available
+    if (resumeSystemMessage) {
+      messages.push({
+        role: 'system',
+        content: resumeSystemMessage
+      });
+    }
     
     // Add conversation history
     if (Array.isArray(history) && history.length > 0) {
@@ -88,10 +121,8 @@ export async function POST(request: Request) {
       content: message
     });
 
-    // For now, use a model that might not fully support function calling in OpenRouter
-    // This is a fallback approach
     try {
-      // First attempt - try with standard request without function calling
+      // Send request to OpenAI with fallback approach
       const completion = await openai.chat.completions.create({
         model: 'anthropic/claude-3-haiku',
         messages: messages as any,
@@ -105,22 +136,22 @@ export async function POST(request: Request) {
       }
       
       const assistantContent = assistantMessage.content || "";
-      
-      // Parse the response to check if the assistant mentioned jobs
-      const jobRelatedTerms = ['job', 'career', 'employment', 'work', 'position', 'hiring', 'opportunity'];
-      const responseText = assistantContent.toLowerCase();
-      const isJobRelated = jobRelatedTerms.some(term => 
-        message.toLowerCase().includes(term) || responseText.includes(term)
-      );
-      
-      // If the query is job-related, include job listings in the response
-      if (isJobRelated) {
+
+      // Check if the user explicitly requests job listings
+      // For example, if they say "search for jobs", "show me job listings", etc.
+      // Adjust the condition as desired to match your trigger phrases
+      const lowerCaseMessage = message.toLowerCase();
+      const explicitSearchTerms = ["search for jobs", "show me job listings", "find me jobs"];
+      const userWantsJobSearch = explicitSearchTerms.some(term => lowerCaseMessage.includes(term));
+
+      // If the user explicitly requests a job search, call searchForJobs
+      if (userWantsJobSearch) {
         const jobListings = searchForJobs();
         const jobListingsText = jobListings.map(job => 
           `- ${job.company}: ${job.position} (${job.salary})`
         ).join('\n');
         
-        const enhancedResponse = `${assistantContent}\n\nHere are some job listings that might interest you:\n\n${jobListingsText}`;
+        const enhancedResponse = `${assistantContent}\n\nHere are some job listings you requested:\n\n${jobListingsText}`;
         
         return NextResponse.json({
           message: enhancedResponse,
@@ -133,14 +164,14 @@ export async function POST(request: Request) {
           ]
         });
       } else {
-        // Just return the standard response
+        // Just return the standard assistant response
         return NextResponse.json({
           message: assistantContent,
           history: [
             ...messages,
             {
               role: 'assistant',
-              content: assistantContent as string
+              content: assistantContent
             }
           ]
         });
@@ -148,20 +179,20 @@ export async function POST(request: Request) {
     } catch (innerError) {
       console.error('Error in primary approach:', innerError);
       
-      // Fallback: Just return a simple response
-      const fallbackResponse = "I'm here to help with your job search and career questions. How can I assist you today?";
-      
-      if (message.toLowerCase().includes('job') || 
-          message.toLowerCase().includes('work') || 
-          message.toLowerCase().includes('career') ||
-          message.toLowerCase().includes('employment')) {
-        
+      // Fallback: just return a simple response
+      // and only show jobs if the user explicitly asked for them
+      const fallbackResponse = "I'm here to help with your questions. How can I assist you today?";
+      const lowerCaseMessage = message.toLowerCase();
+      const explicitSearchTerms = ["search for jobs", "show me job listings", "find me jobs"];
+      const userWantsJobSearch = explicitSearchTerms.some(term => lowerCaseMessage.includes(term));
+
+      if (userWantsJobSearch) {
         const jobListings = searchForJobs();
         const jobListingsText = jobListings.map(job => 
           `- ${job.company}: ${job.position} (${job.salary})`
         ).join('\n');
         
-        const fallbackWithJobs = `I found some job listings that might interest you:\n\n${jobListingsText}`;
+        const fallbackWithJobs = `You requested job listings. Here are some possibilities:\n\n${jobListingsText}`;
         
         return NextResponse.json({
           message: fallbackWithJobs,
@@ -174,7 +205,7 @@ export async function POST(request: Request) {
           ]
         });
       }
-      
+
       return NextResponse.json({
         message: fallbackResponse,
         history: [
@@ -193,4 +224,4 @@ export async function POST(request: Request) {
       { status: 500 }
     );
   }
-} 
+}
