@@ -2,6 +2,20 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import prisma from "@/lib/prisma";
 import { authOptions } from "@/lib/authOptions";
+import { User } from "@prisma/client";
+
+// Create an extended type that includes all fields we need
+type ExtendedUser = User & {
+  university?: string | null;
+  major?: string | null;
+  graduationYear?: number | null;
+  location?: string | null;
+  skills?: string[];
+  linkedInProfile?: string | null;
+  educationLevel?: string | null;
+  careerGoals?: string | null;
+  hasResume?: boolean;
+};
 
 export async function GET(req: Request) {
   try {
@@ -16,22 +30,7 @@ export async function GET(req: Request) {
     // Find the user in the database
     const user = await prisma.user.findUnique({
       where: { email: session.user.email },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        image: true,
-        createdAt: true, // For joinedDate
-        university: true,
-        major: true,
-        graduationYear: true,
-        location: true,
-        skills: true,
-        linkedInProfile: true,
-        // Add new onboarding fields
-        // TypeScript doesn't recognize them, so we need to use as any
-      },
-    }) as any; // Type assertion to bypass TypeScript checks
+    }) as ExtendedUser;
 
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });

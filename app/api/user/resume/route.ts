@@ -69,13 +69,9 @@ export async function POST(request: Request) {
     let resumeText = '';
 
     if (fileType === 'application/pdf') {
-      // For PDFs, we'd normally use a PDF parsing library
-      // Since we can't install new packages, we'll just extract what we can
-      const buffer = await file.arrayBuffer();
-      const text = new TextDecoder('utf-8').decode(buffer);
-      
-      // Basic extraction of text from PDF (will be imperfect)
-      resumeText = text.replace(/\s+/g, ' ').trim();
+      // For PDFs, don't try to extract text directly from binary
+      // Store a placeholder instead
+      resumeText = `Resume content from PDF: ${file.name}`;
     } else if (fileType === 'text/plain') {
       // For plain text files
       const text = await file.text();
@@ -86,15 +82,9 @@ export async function POST(request: Request) {
       resumeText = extractTextFromHTML(html);
     } else if (fileType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
                fileType === 'application/msword') {
-      // For Word documents, we'd normally use a DOCX parsing library
-      // Since we can't install new packages, we'll just extract what we can
-      const buffer = await file.arrayBuffer();
-      const text = new TextDecoder('utf-8').decode(buffer);
-      resumeText = text.replace(/\s+/g, ' ').trim();
-      
-      if (!resumeText || resumeText.length < 50) {
-        resumeText = "Resume content extracted from Word document: " + file.name;
-      }
+      // For Word documents, don't try to extract text directly from binary
+      // Store a placeholder instead
+      resumeText = `Resume content from Word document: ${file.name}`;
     }
 
     // Check if we actually got content

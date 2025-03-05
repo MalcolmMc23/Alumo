@@ -8,6 +8,11 @@ import {
   Calendar,
   FileText,
   Loader2,
+  MapPin,
+  Briefcase,
+  Award,
+  FileSpreadsheet,
+  Linkedin,
 } from "lucide-react";
 
 interface ProfileDetailsPopupProps {
@@ -21,8 +26,15 @@ interface UserData {
   university: string;
   major: string;
   graduationYear: string;
-  bio: string;
+  bio?: string;
   joinedDate: string;
+  location?: string;
+  skills?: string[];
+  linkedInProfile?: string;
+  educationLevel?: string;
+  careerGoals?: string;
+  hasResume?: boolean;
+  userType?: string;
 }
 
 export default function ProfileDetailsPopup({
@@ -93,7 +105,7 @@ export default function ProfileDetailsPopup({
       onClick={handleBackdropClick}
     >
       <div
-        className="bg-white rounded-2xl w-full max-w-2xl p-8 relative animate-zoom-in"
+        className="bg-white rounded-2xl w-full max-w-2xl p-8 relative animate-zoom-in max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         <button
@@ -142,30 +154,40 @@ export default function ProfileDetailsPopup({
                 <p className="text-gray-500">
                   Member since {userData.joinedDate}
                 </p>
+                {userData.userType && (
+                  <div className="mt-1">
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800 capitalize">
+                      {userData.userType}
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
 
             <div className="space-y-6">
               {/* Education Section */}
               <div className="bg-gray-50 p-5 rounded-xl">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                  <GraduationCap size={20} className="text-purple-600 mr-2" />
                   Education
                 </h3>
                 <div className="space-y-4">
                   <div className="flex items-start">
-                    <div className="flex-shrink-0 mt-1">
-                      <GraduationCap size={20} className="text-purple-600" />
-                    </div>
-                    <div className="ml-4">
+                    <div className="ml-2">
                       <p className="font-medium text-gray-800">
                         {userData.university}
                       </p>
                       <p className="text-gray-600">{userData.major}</p>
+                      {userData.educationLevel && (
+                        <p className="text-gray-600">
+                          {userData.educationLevel}
+                        </p>
+                      )}
                     </div>
                   </div>
                   <div className="flex items-start">
                     <div className="flex-shrink-0 mt-1">
-                      <Calendar size={20} className="text-purple-600" />
+                      <Calendar size={18} className="text-purple-600" />
                     </div>
                     <div className="ml-4">
                       <p className="font-medium text-gray-800">
@@ -177,20 +199,111 @@ export default function ProfileDetailsPopup({
                 </div>
               </div>
 
-              {/* Bio Section */}
-              <div className="bg-gray-50 p-5 rounded-xl">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                  About
-                </h3>
-                <div className="flex items-start">
-                  <div className="flex-shrink-0 mt-1">
-                    <FileText size={20} className="text-purple-600" />
-                  </div>
-                  <div className="ml-4">
-                    <p className="text-gray-700">{userData.bio}</p>
+              {/* Location */}
+              {userData.location && (
+                <div className="bg-gray-50 p-5 rounded-xl">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                    <MapPin size={20} className="text-purple-600 mr-2" />
+                    Location
+                  </h3>
+                  <p className="text-gray-700 ml-2">{userData.location}</p>
+                </div>
+              )}
+
+              {/* Career Goals */}
+              {userData.careerGoals && (
+                <div className="bg-gray-50 p-5 rounded-xl">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                    <Briefcase size={20} className="text-purple-600 mr-2" />
+                    Career Goals
+                  </h3>
+                  <p className="text-gray-700 ml-2">{userData.careerGoals}</p>
+                </div>
+              )}
+
+              {/* Skills */}
+              {userData.skills && userData.skills.length > 0 && (
+                <div className="bg-gray-50 p-5 rounded-xl">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                    <Award size={20} className="text-purple-600 mr-2" />
+                    Skills
+                  </h3>
+                  <div className="flex flex-wrap gap-2 ml-2">
+                    {userData.skills.map((skill, index) => (
+                      <span
+                        key={index}
+                        className="bg-purple-100 text-purple-800 text-xs font-medium px-3 py-1 rounded-full"
+                      >
+                        {skill}
+                      </span>
+                    ))}
                   </div>
                 </div>
+              )}
+
+              {/* Resume */}
+              <div className="bg-gray-50 p-5 rounded-xl">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                  <FileSpreadsheet size={20} className="text-purple-600 mr-2" />
+                  Resume
+                </h3>
+                <div className="ml-2">
+                  {userData.hasResume ? (
+                    <div className="flex items-center">
+                      <div className="w-4 h-4 bg-green-500 rounded-full mr-2"></div>
+                      <p className="text-gray-700">Resume uploaded</p>
+                    </div>
+                  ) : (
+                    <div className="flex items-center">
+                      <div className="w-4 h-4 bg-gray-300 rounded-full mr-2"></div>
+                      <p className="text-gray-500">No resume uploaded</p>
+                    </div>
+                  )}
+                </div>
               </div>
+
+              {/* LinkedIn Profile */}
+              {userData.linkedInProfile && (
+                <div className="bg-gray-50 p-5 rounded-xl">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                    <Linkedin size={20} className="text-purple-600 mr-2" />
+                    LinkedIn
+                  </h3>
+                  <a
+                    href={userData.linkedInProfile}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-purple-600 hover:text-purple-800 ml-2 inline-flex items-center"
+                  >
+                    <span className="mr-1">View Profile</span>
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-4 w-4"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                      />
+                    </svg>
+                  </a>
+                </div>
+              )}
+
+              {/* Bio Section */}
+              {userData.bio && (
+                <div className="bg-gray-50 p-5 rounded-xl">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                    <FileText size={20} className="text-purple-600 mr-2" />
+                    About
+                  </h3>
+                  <p className="text-gray-700 ml-2">{userData.bio}</p>
+                </div>
+              )}
             </div>
           </>
         ) : (
