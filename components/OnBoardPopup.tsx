@@ -1,7 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { X, ChevronRight, ChevronLeft, GraduationCap } from "lucide-react";
+import {
+  X,
+  ChevronRight,
+  ChevronLeft,
+  GraduationCap,
+  Upload,
+} from "lucide-react";
 
 interface OnBoardPopupProps {
   isOpen: boolean;
@@ -13,8 +19,8 @@ interface FormData {
   major: string;
   graduationYear: string;
   careerGoals: string;
-  resumeExperience: string;
-  specificHelp: string;
+  hasResume: boolean;
+  resumeFile: File | null;
 }
 
 const educationLevels = [
@@ -38,13 +44,13 @@ export default function OnBoardPopup({ isOpen, onClose }: OnBoardPopupProps) {
     major: "",
     graduationYear: "",
     careerGoals: "",
-    resumeExperience: "",
-    specificHelp: "",
+    hasResume: false,
+    resumeFile: null,
   });
 
   if (!isOpen) return null;
 
-  const totalSteps = 4;
+  const totalSteps = 3;
 
   const handleInputChange = (field: keyof FormData, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -63,6 +69,21 @@ export default function OnBoardPopup({ isOpen, onClose }: OnBoardPopupProps) {
     if (step > 1) {
       setStep(step - 1);
     }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setFormData((prev) => ({
+        ...prev,
+        resumeFile: e.target.files![0],
+        hasResume: true,
+      }));
+    }
+  };
+
+  const handleSkipResume = () => {
+    setFormData((prev) => ({ ...prev, hasResume: false, resumeFile: null }));
+    handleNext();
   };
 
   const renderStep = () => {
@@ -161,47 +182,70 @@ export default function OnBoardPopup({ isOpen, onClose }: OnBoardPopupProps) {
         return (
           <div className="space-y-6">
             <div className="space-y-4">
-              <label className="block text-sm font-medium text-gray-700 mb-3">
-                Do you have previous experience writing resumes?
+              <label className="block text-lg font-medium text-gray-800 mb-3">
+                Do you have a resume?
               </label>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                {experienceLevels.map((level) => (
-                  <button
-                    key={level.value}
-                    onClick={() =>
-                      handleInputChange("resumeExperience", level.value)
+              <p className="text-gray-600 mb-6">
+                You can upload your existing resume, or skip if you don't have
+                one yet. We'll help you build or improve your resume either way!
+              </p>
+
+              <div className="flex flex-col space-y-4">
+                <label
+                  htmlFor="resume-upload"
+                  className={`
+                    flex flex-col items-center justify-center p-6 border-2 border-dashed 
+                    rounded-lg cursor-pointer transition-colors
+                    ${
+                      formData.resumeFile
+                        ? "border-purple-600 bg-purple-50"
+                        : "border-gray-300 hover:border-purple-300 hover:bg-purple-50/50"
                     }
-                    className={`
-                      px-4 py-3 rounded-lg border-2 text-center
-                      ${
-                        formData.resumeExperience === level.value
-                          ? "border-purple-600 bg-purple-50 text-purple-700"
-                          : "border-gray-200 hover:border-purple-200 text-gray-700"
-                      }
-                    `}
+                  `}
+                >
+                  <div className="flex flex-col items-center space-y-2">
+                    <div className="p-3 rounded-full bg-purple-100">
+                      <Upload size={24} className="text-purple-600" />
+                    </div>
+
+                    {formData.resumeFile ? (
+                      <>
+                        <span className="text-purple-700 font-medium">
+                          Resume uploaded successfully!
+                        </span>
+                        <span className="text-sm text-gray-500">
+                          {formData.resumeFile.name}
+                        </span>
+                      </>
+                    ) : (
+                      <>
+                        <span className="text-gray-700 font-medium">
+                          Click to upload your resume
+                        </span>
+                        <span className="text-sm text-gray-500">
+                          PDF, Word, or other document formats (max 5MB)
+                        </span>
+                      </>
+                    )}
+                  </div>
+                  <input
+                    id="resume-upload"
+                    type="file"
+                    accept=".pdf,.doc,.docx,.txt"
+                    className="hidden"
+                    onChange={handleFileChange}
+                  />
+                </label>
+
+                <div className="text-center">
+                  <button
+                    onClick={handleSkipResume}
+                    className="text-gray-500 hover:text-purple-600 font-medium"
                   >
-                    {level.label}
+                    I don't have a resume yet
                   </button>
-                ))}
+                </div>
               </div>
-            </div>
-          </div>
-        );
-      case 4:
-        return (
-          <div className="space-y-6">
-            <div className="space-y-4">
-              <label className="block text-sm font-medium text-gray-700">
-                What specific help are you looking for with your resume?
-              </label>
-              <textarea
-                value={formData.specificHelp}
-                onChange={(e) =>
-                  handleInputChange("specificHelp", e.target.value)
-                }
-                placeholder="e.g., Highlighting academic achievements, formatting, industry-specific tips..."
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-100 focus:border-purple-500 h-32 resize-none"
-              />
             </div>
           </div>
         );

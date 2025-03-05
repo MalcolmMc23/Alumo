@@ -17,6 +17,7 @@ export async function findOrCreateUser(profile: any) {
           email: profile?.email,
           name: profile?.name,
           image: profile?.picture,
+          // New fields will be populated later via profile completion
         },
       });
     }

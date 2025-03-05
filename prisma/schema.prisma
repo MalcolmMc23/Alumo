@@ -15,6 +15,13 @@ model User {
   image         String?
   name          String?
   updatedAt     DateTime       @updatedAt @db.Timestamptz(6)
+  userType      UserType       @default(student)
+  university    String?
+  major         String?
+  graduationYear Int?
+  location      String?
+  skills        String[]       @default([])
+  linkedInProfile String?
   conversations Conversation[]
 
   @@map("user")
@@ -44,4 +51,10 @@ model Message {
 
   @@index([conversationId])
   @@map("message")
+}
+
+enum UserType {
+  student
+  alumni
+  admin
 }
