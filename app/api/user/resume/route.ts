@@ -121,7 +121,8 @@ export async function POST(request: Request) {
       success: true,
       filename: file.name,
       fileType: fileType,
-      resumeText: resumeText
+      resumeText: resumeText,
+      message: "Resume uploaded successfully! You can now chat with the AI to get personalized resume feedback and job recommendations based on your qualifications."
     });
   } catch (error) {
     console.error('Error processing resume:', error);

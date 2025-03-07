@@ -99,7 +99,7 @@ export async function POST(request: Request) {
     // Add base system message for context
     messages.push({
       role: 'system',
-      content: 'You are a helpful AI assistant for Alumo, a career center platform that helps college students with job searches and connecting with alumni. Provide helpful, concise, and accurate responses. When users specifically request job opportunities or searching for jobs, provide appropriate job listings. If the user uploads a resume, analyze it thoroughly and provide constructive feedback on format, content, skills, and opportunities for improvement, then suggest relevant job matches based on their qualifications. Format your responses using Markdown: use **bold** for emphasis, *italics* for secondary emphasis, use proper headings with # and ##, use bullet points with - or * for lists, use numbered lists with 1. 2. 3. when appropriate, use `code blocks` for technical content, and organize complex information into clear sections with headings.'
+      content: 'You are a helpful AI assistant for Alumo, a career center platform that helps college students with job searches and connecting with alumni. Provide helpful, concise, and accurate responses. When users specifically request job opportunities or searching for jobs, provide appropriate job listings. If the user uploads a resume or asks for resume feedback, analyze it thoroughly but keep your response concise (under 500 words). Start with a brief "Summary of Suggested Changes" section listing 3-5 key improvements as bullet points. Then 1) explicitly list what information you can see in their resume, 2) provide specific, actionable feedback on format, content, and skills with minimal explanation, 3) suggest exact wording changes when appropriate, and 4) clearly state if there\'s information you can\'t determine. Format your responses using Markdown: use **bold** for emphasis, *italics* for secondary emphasis, use proper headings with # and ##, use bullet points for lists.'
     });
     
     // Add resume system message if available
@@ -120,6 +120,23 @@ export async function POST(request: Request) {
       role: 'user',
       content: message
     });
+
+    // Check if this is the first message after a resume upload or if the user is asking for resume feedback
+    const isResumeUploadMessage = message.toLowerCase().includes('uploaded my resume') || 
+                                   message.toLowerCase().includes('just uploaded my resume');
+    const isAskingForResumeFeedback = message.toLowerCase().includes('resume feedback') || 
+                                       message.toLowerCase().includes('review my resume') ||
+                                       message.toLowerCase().includes('what do you think of my resume') ||
+                                       message.toLowerCase().includes('how is my resume');
+
+    // If the user has a resume and is asking for feedback or has just uploaded it, trigger resume analysis
+    if ((isResumeUploadMessage || isAskingForResumeFeedback) && resumeSystemMessage) {
+      // Add a specific prompt to trigger detailed resume analysis
+      messages.push({
+        role: 'user',
+        content: "Please analyze my resume and provide concise, actionable feedback. Start with a brief summary of 3-5 key suggested changes. Then list what information you can see in my resume, followed by specific feedback on format, content, and skills. Keep your response under 500 words, focusing on concrete suggestions rather than explanations. Be transparent about any missing information."
+      });
+    }
 
     try {
       // Send request to OpenAI with fallback approach

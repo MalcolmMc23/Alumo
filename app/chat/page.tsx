@@ -72,6 +72,18 @@ export default function ChatPage() {
     fetchUserProfile();
   }, []);
 
+  // Handler for requesting resume feedback
+  const handleRequestResumeFeedback = () => {
+    setInputMessage(
+      "Please review my resume and provide a concise summary of key suggested changes. Keep your feedback brief but actionable."
+    );
+    // Optional: Auto-submit the message
+    setTimeout(() => {
+      const formEvent = { preventDefault: () => {} } as React.FormEvent;
+      handleSendMessage(formEvent);
+    }, 100);
+  };
+
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "auto" });
   };
@@ -639,7 +651,10 @@ export default function ChatPage() {
       />
       <main className="flex-1 flex flex-col max-h-screen overflow-hidden">
         <ChatHeader onProfileClick={() => setIsProfileOpen(true)} />
-        <ResumeIndicator isVisible={hasResume} />
+        <ResumeIndicator
+          isVisible={hasResume}
+          onRequestFeedback={handleRequestResumeFeedback}
+        />
 
         <div
           className={`flex-1 overflow-y-auto p-4 sm:p-6 ${
