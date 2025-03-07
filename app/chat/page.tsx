@@ -651,10 +651,6 @@ export default function ChatPage() {
       />
       <main className="flex-1 flex flex-col max-h-screen overflow-hidden">
         <ChatHeader onProfileClick={() => setIsProfileOpen(true)} />
-        <ResumeIndicator
-          isVisible={hasResume}
-          onRequestFeedback={handleRequestResumeFeedback}
-        />
 
         <div
           className={`flex-1 overflow-y-auto p-4 sm:p-6 ${
