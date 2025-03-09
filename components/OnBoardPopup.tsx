@@ -12,6 +12,41 @@ import {
 } from "lucide-react";
 import majorsList from "./majorsList";
 
+// Custom animations style
+const animationStyles = `
+  @keyframes fadeInDown {
+    from {
+      opacity: 0;
+      transform: translateY(-10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  @keyframes scaleIn {
+    from {
+      opacity: 0;
+      transform: scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+  
+  .suggestions-dropdown {
+    opacity: 0;
+    animation: fadeInDown 0.3s ease-out forwards;
+  }
+  
+  .suggestion-item {
+    animation: scaleIn 0.2s ease-out forwards;
+    animation-delay: calc(var(--index) * 0.03s);
+  }
+`;
+
 interface OnBoardPopupProps {
   isOpen: boolean;
   onClose: () => void;
@@ -45,6 +80,19 @@ const experienceLevels = [
 ];
 
 export default function OnBoardPopup({ isOpen, onClose }: OnBoardPopupProps) {
+  // Add the animations style to the component
+  useEffect(() => {
+    // Add the style element only once when component mounts
+    const styleElement = document.createElement("style");
+    styleElement.textContent = animationStyles;
+    document.head.appendChild(styleElement);
+
+    // Clean up when component unmounts
+    return () => {
+      document.head.removeChild(styleElement);
+    };
+  }, []);
+
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState<FormData>({
     educationLevel: "",
@@ -317,7 +365,7 @@ export default function OnBoardPopup({ isOpen, onClose }: OnBoardPopupProps) {
                 {majorSuggestions.length > 0 && (
                   <div
                     ref={suggestionsRef}
-                    className="w-full mb-2 overflow-hidden"
+                    className="w-full mb-2 overflow-hidden suggestions-dropdown"
                   >
                     <div className="flex flex-wrap gap-1.5 p-1">
                       {majorSuggestions.map((major, index) => {
@@ -328,18 +376,16 @@ export default function OnBoardPopup({ isOpen, onClose }: OnBoardPopupProps) {
                             key={index}
                             onClick={() => handleSelectMajor(major)}
                             className={`
-                              px-3 py-1.5 rounded-full text-sm font-medium transition-colors
+                              px-3 py-1.5 rounded-full text-sm font-medium transition-colors suggestion-item
                               ${
                                 isSelected
                                   ? "bg-purple-600 text-white"
                                   : "bg-gray-100 hover:bg-purple-50 text-gray-700 hover:text-purple-700"
                               }
                             `}
+                            style={{ "--index": index } as React.CSSProperties}
                           >
                             {major}
-                            {isSelected && (
-                              <span className="ml-1 inline-flex">✓</span>
-                            )}
                           </button>
                         );
                       })}
