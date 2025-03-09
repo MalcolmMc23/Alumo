@@ -10,6 +10,7 @@ import {
   FileCheck,
   AlertCircle,
 } from "lucide-react";
+import majorsList from "./majorsList";
 
 interface OnBoardPopupProps {
   isOpen: boolean;
@@ -41,92 +42,6 @@ const experienceLevels = [
   { value: "none", label: "No Experience" },
   { value: "some", label: "Some Experience" },
   { value: "experienced", label: "Experienced" },
-];
-
-// Comprehensive list of academic majors
-const majorsList = [
-  "Accounting",
-  "Aerospace Engineering",
-  "Agriculture",
-  "Anthropology",
-  "Architecture",
-  "Art History",
-  "Artificial Intelligence",
-  "Astronomy",
-  "Biochemistry",
-  "Biomedical Engineering",
-  "Business Administration",
-  "Business Analytics",
-  "Business Law",
-  "Chemical Engineering",
-  "Chemistry",
-  "Civil Engineering",
-  "Communications",
-  "Computer Engineering",
-  "Computer Science",
-  "Criminal Justice",
-  "Cybersecurity",
-  "Data Science",
-  "Economics",
-  "Education",
-  "Electrical Engineering",
-  "English Literature",
-  "Environmental Science",
-  "Film Studies",
-  "Finance",
-  "Fine Arts",
-  "Food Science",
-  "Forensic Science",
-  "Gender Studies",
-  "General Business",
-  "Genetics",
-  "Geography",
-  "Geology",
-  "Graphic Design",
-  "Health Sciences",
-  "History",
-  "Hospitality Management",
-  "Human Resources",
-  "Industrial Design",
-  "Information Systems",
-  "International Business",
-  "International Relations",
-  "Journalism",
-  "Kinesiology",
-  "Linguistics",
-  "Marketing",
-  "Materials Science",
-  "Mathematics",
-  "Mechanical Engineering",
-  "Microbiology",
-  "Music",
-  "Neuroscience",
-  "Nursing",
-  "Nutrition",
-  "Operations & Business Analytics",
-  "Philosophy",
-  "Physics",
-  "Political Science",
-  "Pre-Business Administration",
-  "Pre-Law",
-  "Pre-Medicine",
-  "Psychology",
-  "Public Administration",
-  "Public Health",
-  "Public Relations",
-  "Religious Studies",
-  "Robotics",
-  "Sociology",
-  "Software Engineering",
-  "Statistics",
-  "Supply Chain Management",
-  "Theater",
-  "Urban Planning",
-  "Veterinary Science",
-  "Visual Arts",
-  "Web Development",
-  "Wildlife Biology",
-  "Zoology",
 ];
 
 export default function OnBoardPopup({ isOpen, onClose }: OnBoardPopupProps) {
@@ -402,9 +317,9 @@ export default function OnBoardPopup({ isOpen, onClose }: OnBoardPopupProps) {
                 {majorSuggestions.length > 0 && (
                   <div
                     ref={suggestionsRef}
-                    className="w-full mb-2 bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden"
+                    className="w-full mb-2 overflow-hidden"
                   >
-                    <div className="flex flex-wrap gap-1.5 p-2">
+                    <div className="flex flex-wrap gap-1.5 p-1">
                       {majorSuggestions.map((major, index) => {
                         const isSelected =
                           formData.selectedMajors.includes(major);
