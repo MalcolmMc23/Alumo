@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import {
   X,
   ChevronRight,
@@ -18,7 +18,8 @@ interface OnBoardPopupProps {
 
 interface FormData {
   educationLevel: string;
-  major: string;
+  major: string; // Will store comma-separated majors
+  selectedMajors: string[]; // Array to store selected majors
   graduationYear: string;
   careerGoals: string;
   hasResume: boolean;
@@ -42,11 +43,98 @@ const experienceLevels = [
   { value: "experienced", label: "Experienced" },
 ];
 
+// Comprehensive list of academic majors
+const majorsList = [
+  "Accounting",
+  "Aerospace Engineering",
+  "Agriculture",
+  "Anthropology",
+  "Architecture",
+  "Art History",
+  "Artificial Intelligence",
+  "Astronomy",
+  "Biochemistry",
+  "Biomedical Engineering",
+  "Business Administration",
+  "Business Analytics",
+  "Business Law",
+  "Chemical Engineering",
+  "Chemistry",
+  "Civil Engineering",
+  "Communications",
+  "Computer Engineering",
+  "Computer Science",
+  "Criminal Justice",
+  "Cybersecurity",
+  "Data Science",
+  "Economics",
+  "Education",
+  "Electrical Engineering",
+  "English Literature",
+  "Environmental Science",
+  "Film Studies",
+  "Finance",
+  "Fine Arts",
+  "Food Science",
+  "Forensic Science",
+  "Gender Studies",
+  "General Business",
+  "Genetics",
+  "Geography",
+  "Geology",
+  "Graphic Design",
+  "Health Sciences",
+  "History",
+  "Hospitality Management",
+  "Human Resources",
+  "Industrial Design",
+  "Information Systems",
+  "International Business",
+  "International Relations",
+  "Journalism",
+  "Kinesiology",
+  "Linguistics",
+  "Marketing",
+  "Materials Science",
+  "Mathematics",
+  "Mechanical Engineering",
+  "Microbiology",
+  "Music",
+  "Neuroscience",
+  "Nursing",
+  "Nutrition",
+  "Operations & Business Analytics",
+  "Philosophy",
+  "Physics",
+  "Political Science",
+  "Pre-Business Administration",
+  "Pre-Law",
+  "Pre-Medicine",
+  "Psychology",
+  "Public Administration",
+  "Public Health",
+  "Public Relations",
+  "Religious Studies",
+  "Robotics",
+  "Sociology",
+  "Software Engineering",
+  "Statistics",
+  "Supply Chain Management",
+  "Theater",
+  "Urban Planning",
+  "Veterinary Science",
+  "Visual Arts",
+  "Web Development",
+  "Wildlife Biology",
+  "Zoology",
+];
+
 export default function OnBoardPopup({ isOpen, onClose }: OnBoardPopupProps) {
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState<FormData>({
     educationLevel: "",
     major: "",
+    selectedMajors: [],
     graduationYear: "",
     careerGoals: "",
     hasResume: false,
@@ -57,6 +145,29 @@ export default function OnBoardPopup({ isOpen, onClose }: OnBoardPopupProps) {
   });
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState("");
+  const [showMajorSuggestions, setShowMajorSuggestions] = useState(false);
+  const [majorSuggestions, setMajorSuggestions] = useState<string[]>([]);
+  const majorInputRef = useRef<HTMLInputElement>(null);
+  const suggestionsRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    // Add click outside listener to close suggestions
+    function handleClickOutside(event: MouseEvent) {
+      if (
+        suggestionsRef.current &&
+        !suggestionsRef.current.contains(event.target as Node) &&
+        majorInputRef.current &&
+        !majorInputRef.current.contains(event.target as Node)
+      ) {
+        setShowMajorSuggestions(false);
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   if (!isOpen) return null;
 
@@ -64,6 +175,97 @@ export default function OnBoardPopup({ isOpen, onClose }: OnBoardPopupProps) {
 
   const handleInputChange = (field: keyof FormData, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
+
+    // Filter major suggestions when typing in the major field
+    if (field === "major") {
+      if (value.trim() === "") {
+        // Show all available majors if the input is empty plus selected ones
+        const nonSelectedMajors = majorsList
+          .filter((major) => !formData.selectedMajors.includes(major))
+          .slice(0, 10 - formData.selectedMajors.length);
+        const combinedSuggestions = [
+          ...formData.selectedMajors,
+          ...nonSelectedMajors,
+        ];
+        setMajorSuggestions(combinedSuggestions);
+        setShowMajorSuggestions(true);
+      } else {
+        // Filter non-selected majors based on input
+        const filteredNonSelectedMajors = majorsList.filter(
+          (major) =>
+            !formData.selectedMajors.includes(major) &&
+            major.toLowerCase().includes(value.toLowerCase())
+        );
+
+        // Combine with selected majors to ensure they always stay visible
+        const combinedSuggestions = [
+          ...formData.selectedMajors,
+          ...filteredNonSelectedMajors,
+        ];
+
+        // Limit suggestions but ensure all selected ones remain
+        const finalSuggestions = combinedSuggestions.slice(
+          0,
+          Math.max(10, formData.selectedMajors.length)
+        );
+
+        setMajorSuggestions(finalSuggestions);
+        setShowMajorSuggestions(true);
+      }
+    }
+  };
+
+  const handleSelectMajor = (major: string) => {
+    // Toggle selection - if already selected, remove it; otherwise, add it
+    const newSelectedMajors = formData.selectedMajors.includes(major)
+      ? formData.selectedMajors.filter((m) => m !== major)
+      : [...formData.selectedMajors, major];
+
+    setFormData((prev) => ({
+      ...prev,
+      selectedMajors: newSelectedMajors,
+    }));
+
+    // Keep focus on input and keep suggestions open
+    if (majorInputRef.current) {
+      majorInputRef.current.focus();
+    }
+
+    // Update suggestions to reflect new selection state
+    const nonSelectedMajors = majorsList
+      .filter(
+        (m) =>
+          !newSelectedMajors.includes(m) &&
+          (formData.major.trim() === "" ||
+            m.toLowerCase().includes(formData.major.toLowerCase()))
+      )
+      .slice(0, 10 - newSelectedMajors.length);
+
+    setMajorSuggestions([...newSelectedMajors, ...nonSelectedMajors]);
+  };
+
+  const handleRemoveMajor = (majorToRemove: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      selectedMajors: prev.selectedMajors.filter(
+        (major) => major !== majorToRemove
+      ),
+    }));
+  };
+
+  const handleMajorFocus = () => {
+    // Always show suggestions when input is focused
+    // Start with selected majors, then add other popular majors
+    const nonSelectedMajors = majorsList
+      .filter((major) => !formData.selectedMajors.includes(major))
+      .slice(0, 10 - formData.selectedMajors.length);
+
+    const combinedSuggestions = [
+      ...formData.selectedMajors,
+      ...nonSelectedMajors,
+    ];
+    setMajorSuggestions(combinedSuggestions);
+    setShowMajorSuggestions(true);
   };
 
   const handleNext = () => {
@@ -157,10 +359,13 @@ export default function OnBoardPopup({ isOpen, onClose }: OnBoardPopupProps) {
 
   const submitUserData = async () => {
     try {
+      // Combine selected majors into a comma-separated string before submission
+      const majorString = formData.selectedMajors.join(", ");
+
       // Prepare data for submission
       const userData = {
         educationLevel: formData.educationLevel,
-        major: formData.major,
+        major: majorString, // Use the combined string
         graduationYear: formData.graduationYear,
         careerGoals: formData.careerGoals,
         hasResume: formData.hasResume,
@@ -190,6 +395,23 @@ export default function OnBoardPopup({ isOpen, onClose }: OnBoardPopupProps) {
       alert("Failed to complete onboarding. Please try again.");
     }
   };
+
+  const clearMajorInput = () => {
+    setFormData((prev) => ({ ...prev, major: "" }));
+    if (majorInputRef.current) {
+      majorInputRef.current.focus();
+    }
+  };
+
+  // Add an effect to update major string when selectedMajors changes
+  useEffect(() => {
+    // Update the major string whenever selectedMajors changes
+    const majorString = formData.selectedMajors.join(", ");
+    setFormData((prev) => ({
+      ...prev,
+      major: prev.major, // Keep the search text, just update the internal string representation
+    }));
+  }, [formData.selectedMajors]);
 
   const renderStep = () => {
     switch (step) {
@@ -224,15 +446,71 @@ export default function OnBoardPopup({ isOpen, onClose }: OnBoardPopupProps) {
 
             <div className="space-y-4">
               <label className="block text-sm font-medium text-gray-700">
-                What is your major?
+                What are your majors?{" "}
+                <span className="text-gray-400">(optional)</span>
               </label>
-              <input
-                type="text"
-                value={formData.major}
-                onChange={(e) => handleInputChange("major", e.target.value)}
-                placeholder="e.g., Computer Science"
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-100 focus:border-purple-500"
-              />
+
+              <div className="relative">
+                {/* Suggestions shown above input */}
+                <div
+                  ref={suggestionsRef}
+                  className={`w-full mb-2 bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden ${
+                    !showMajorSuggestions ? "hidden" : ""
+                  }`}
+                >
+                  <div className="flex flex-wrap gap-1.5 p-2">
+                    {majorSuggestions.map((major, index) => {
+                      const isSelected =
+                        formData.selectedMajors.includes(major);
+                      return (
+                        <button
+                          key={index}
+                          onClick={() => handleSelectMajor(major)}
+                          className={`
+                            px-3 py-1.5 rounded-full text-sm font-medium transition-colors
+                            ${
+                              isSelected
+                                ? "bg-purple-600 text-white"
+                                : "bg-gray-100 hover:bg-purple-50 text-gray-700 hover:text-purple-700"
+                            }
+                          `}
+                        >
+                          {major}
+                          {isSelected && (
+                            <span className="ml-1 inline-flex">✓</span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Input field */}
+                <div className="relative flex items-center">
+                  <input
+                    ref={majorInputRef}
+                    type="text"
+                    value={formData.major}
+                    onChange={(e) => handleInputChange("major", e.target.value)}
+                    onFocus={handleMajorFocus}
+                    onClick={
+                      handleMajorFocus
+                    } /* Also show suggestions on click */
+                    placeholder="Search for majors..."
+                    className="w-full p-3 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-100 focus:border-purple-500"
+                  />
+                  <div className="absolute right-3 flex space-x-1">
+                    {formData.major && (
+                      <button
+                        onClick={clearMajorInput}
+                        className="text-gray-400 hover:text-gray-600 p-1 rounded-full"
+                      >
+                        <X size={16} />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         );
