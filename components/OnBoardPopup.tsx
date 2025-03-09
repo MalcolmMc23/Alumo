@@ -145,28 +145,14 @@ export default function OnBoardPopup({ isOpen, onClose }: OnBoardPopupProps) {
   });
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState("");
-  const [showMajorSuggestions, setShowMajorSuggestions] = useState(false);
   const [majorSuggestions, setMajorSuggestions] = useState<string[]>([]);
   const majorInputRef = useRef<HTMLInputElement>(null);
   const suggestionsRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // Add click outside listener to close suggestions
-    function handleClickOutside(event: MouseEvent) {
-      if (
-        suggestionsRef.current &&
-        !suggestionsRef.current.contains(event.target as Node) &&
-        majorInputRef.current &&
-        !majorInputRef.current.contains(event.target as Node)
-      ) {
-        setShowMajorSuggestions(false);
-      }
-    }
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
+    // We'll no longer initialize with suggestions
+    // Only show suggestions when user types
+    setMajorSuggestions([]);
   }, []);
 
   if (!isOpen) return null;
@@ -179,16 +165,8 @@ export default function OnBoardPopup({ isOpen, onClose }: OnBoardPopupProps) {
     // Filter major suggestions when typing in the major field
     if (field === "major") {
       if (value.trim() === "") {
-        // Show all available majors if the input is empty plus selected ones
-        const nonSelectedMajors = majorsList
-          .filter((major) => !formData.selectedMajors.includes(major))
-          .slice(0, 10 - formData.selectedMajors.length);
-        const combinedSuggestions = [
-          ...formData.selectedMajors,
-          ...nonSelectedMajors,
-        ];
-        setMajorSuggestions(combinedSuggestions);
-        setShowMajorSuggestions(true);
+        // When input is empty, only show selected majors if any
+        setMajorSuggestions(formData.selectedMajors);
       } else {
         // Filter non-selected majors based on input
         const filteredNonSelectedMajors = majorsList.filter(
@@ -210,7 +188,6 @@ export default function OnBoardPopup({ isOpen, onClose }: OnBoardPopupProps) {
         );
 
         setMajorSuggestions(finalSuggestions);
-        setShowMajorSuggestions(true);
       }
     }
   };
@@ -226,7 +203,7 @@ export default function OnBoardPopup({ isOpen, onClose }: OnBoardPopupProps) {
       selectedMajors: newSelectedMajors,
     }));
 
-    // Keep focus on input and keep suggestions open
+    // Keep focus on input
     if (majorInputRef.current) {
       majorInputRef.current.focus();
     }
@@ -242,30 +219,6 @@ export default function OnBoardPopup({ isOpen, onClose }: OnBoardPopupProps) {
       .slice(0, 10 - newSelectedMajors.length);
 
     setMajorSuggestions([...newSelectedMajors, ...nonSelectedMajors]);
-  };
-
-  const handleRemoveMajor = (majorToRemove: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      selectedMajors: prev.selectedMajors.filter(
-        (major) => major !== majorToRemove
-      ),
-    }));
-  };
-
-  const handleMajorFocus = () => {
-    // Always show suggestions when input is focused
-    // Start with selected majors, then add other popular majors
-    const nonSelectedMajors = majorsList
-      .filter((major) => !formData.selectedMajors.includes(major))
-      .slice(0, 10 - formData.selectedMajors.length);
-
-    const combinedSuggestions = [
-      ...formData.selectedMajors,
-      ...nonSelectedMajors,
-    ];
-    setMajorSuggestions(combinedSuggestions);
-    setShowMajorSuggestions(true);
   };
 
   const handleNext = () => {
@@ -398,20 +351,14 @@ export default function OnBoardPopup({ isOpen, onClose }: OnBoardPopupProps) {
 
   const clearMajorInput = () => {
     setFormData((prev) => ({ ...prev, major: "" }));
+
+    // When clearing input, only show selected majors
+    setMajorSuggestions(formData.selectedMajors);
+
     if (majorInputRef.current) {
       majorInputRef.current.focus();
     }
   };
-
-  // Add an effect to update major string when selectedMajors changes
-  useEffect(() => {
-    // Update the major string whenever selectedMajors changes
-    const majorString = formData.selectedMajors.join(", ");
-    setFormData((prev) => ({
-      ...prev,
-      major: prev.major, // Keep the search text, just update the internal string representation
-    }));
-  }, [formData.selectedMajors]);
 
   const renderStep = () => {
     switch (step) {
@@ -451,39 +398,39 @@ export default function OnBoardPopup({ isOpen, onClose }: OnBoardPopupProps) {
               </label>
 
               <div className="relative">
-                {/* Suggestions shown above input */}
-                <div
-                  ref={suggestionsRef}
-                  className={`w-full mb-2 bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden ${
-                    !showMajorSuggestions ? "hidden" : ""
-                  }`}
-                >
-                  <div className="flex flex-wrap gap-1.5 p-2">
-                    {majorSuggestions.map((major, index) => {
-                      const isSelected =
-                        formData.selectedMajors.includes(major);
-                      return (
-                        <button
-                          key={index}
-                          onClick={() => handleSelectMajor(major)}
-                          className={`
-                            px-3 py-1.5 rounded-full text-sm font-medium transition-colors
-                            ${
-                              isSelected
-                                ? "bg-purple-600 text-white"
-                                : "bg-gray-100 hover:bg-purple-50 text-gray-700 hover:text-purple-700"
-                            }
-                          `}
-                        >
-                          {major}
-                          {isSelected && (
-                            <span className="ml-1 inline-flex">✓</span>
-                          )}
-                        </button>
-                      );
-                    })}
+                {/* Suggestions shown above input - only when typing or with selections */}
+                {majorSuggestions.length > 0 && (
+                  <div
+                    ref={suggestionsRef}
+                    className="w-full mb-2 bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden"
+                  >
+                    <div className="flex flex-wrap gap-1.5 p-2">
+                      {majorSuggestions.map((major, index) => {
+                        const isSelected =
+                          formData.selectedMajors.includes(major);
+                        return (
+                          <button
+                            key={index}
+                            onClick={() => handleSelectMajor(major)}
+                            className={`
+                              px-3 py-1.5 rounded-full text-sm font-medium transition-colors
+                              ${
+                                isSelected
+                                  ? "bg-purple-600 text-white"
+                                  : "bg-gray-100 hover:bg-purple-50 text-gray-700 hover:text-purple-700"
+                              }
+                            `}
+                          >
+                            {major}
+                            {isSelected && (
+                              <span className="ml-1 inline-flex">✓</span>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
-                </div>
+                )}
 
                 {/* Input field */}
                 <div className="relative flex items-center">
@@ -492,10 +439,6 @@ export default function OnBoardPopup({ isOpen, onClose }: OnBoardPopupProps) {
                     type="text"
                     value={formData.major}
                     onChange={(e) => handleInputChange("major", e.target.value)}
-                    onFocus={handleMajorFocus}
-                    onClick={
-                      handleMajorFocus
-                    } /* Also show suggestions on click */
                     placeholder="Search for majors..."
                     className="w-full p-3 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-100 focus:border-purple-500"
                   />
