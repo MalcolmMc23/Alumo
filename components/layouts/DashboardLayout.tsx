@@ -11,6 +11,7 @@ import {
   X,
   Bell,
   User,
+  FileText,
 } from "lucide-react";
 import ProfilePopup from "@/components/ProfilePopup";
 
@@ -18,6 +19,7 @@ const navItems = [
   { icon: LayoutDashboard, label: "Dashboard", href: "/" },
   { icon: MessageSquare, label: "AI Chat", href: "/chat" },
   { icon: TextQuote, label: "Input", href: "/input" },
+  { icon: FileText, label: "Documents", href: "/documents" },
 ];
 
 export default function DashboardLayout({
