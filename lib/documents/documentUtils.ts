@@ -82,8 +82,22 @@ export const generateDocumentJWT = (config: DocumentConfig): string => {
   });
   
   try {
+    // Add required header for ONLYOFFICE JWT
+    const payload = {
+      ...config,
+      iss: 'Alumo',
+      aud: 'ONLYOFFICE'
+    };
+    
     // Make sure we're using the correct algorithm that ONLYOFFICE expects
-    const token = jwt.sign(config, jwtSecret, { algorithm: 'HS256', expiresIn: '5h' });
+    const token = jwt.sign(payload, jwtSecret, { 
+      algorithm: 'HS256',
+      expiresIn: '5h',
+      header: {
+        alg: 'HS256',
+        typ: 'JWT'
+      }
+    });
     logger.info('JWT Token generated successfully');
     return token;
   } catch (error) {
@@ -122,6 +136,24 @@ export const createEditorConfig = (
 
   logger.debug('Creating editor config', { fileId, fileName, documentType });
 
+  // Construct callback URL with the file ID
+  const baseCallbackUrl = process.env.ONLYOFFICE_CALLBACK_URL || process.env.NEXTAUTH_URL;
+  
+  if (!baseCallbackUrl) {
+    logger.error('Missing callback URL configuration');
+    throw new Error('Either ONLYOFFICE_CALLBACK_URL or NEXTAUTH_URL must be defined');
+  }
+  
+  // Make sure URL doesn't end with a slash
+  const trimmedCallbackUrl = baseCallbackUrl.endsWith('/') 
+    ? baseCallbackUrl.slice(0, -1) 
+    : baseCallbackUrl;
+  
+  // Ensure path is correctly formatted with fileId
+  const callbackUrl = `${trimmedCallbackUrl}/api/documents/callback?fileId=${fileId}`;
+  
+  logger.debug('Callback URL generated', { callbackUrl });
+
   const config: DocumentConfig = {
     document: {
       fileType: fileExtension,
@@ -131,7 +163,7 @@ export const createEditorConfig = (
     },
     documentType,
     editorConfig: {
-      callbackUrl: process.env.ONLYOFFICE_CALLBACK_URL || `${process.env.NEXTAUTH_URL}/api/documents/callback?fileId=${fileId}`,
+      callbackUrl: callbackUrl,
       lang: 'en',
       mode: 'edit',
       user: {

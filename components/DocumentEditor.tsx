@@ -85,13 +85,26 @@ export default function DocumentEditor({ config, token }: DocumentEditorProps) {
 
         console.log("Loading ONLYOFFICE API from:", apiScriptUrl);
 
+        // Check if script already exists
+        const existingScript = document.querySelector(
+          `script[src="${apiScriptUrl}"]`
+        );
+        if (existingScript) {
+          console.log("ONLYOFFICE API script already loaded");
+          setIsLoaded(true);
+          return () => {}; // No cleanup needed
+        }
+
         const script = document.createElement("script");
         script.src = apiScriptUrl;
         script.async = true;
+        script.id = "onlyoffice-api-script"; // Add ID for easier reference
+
         script.onload = () => {
           console.log("ONLYOFFICE API script loaded successfully");
           setIsLoaded(true);
         };
+
         script.onerror = (e) => {
           console.error("Failed to load ONLYOFFICE API:", e);
           setError(
@@ -101,10 +114,31 @@ export default function DocumentEditor({ config, token }: DocumentEditorProps) {
           // Try to ping the server when the API fails to load
           pingDocumentServer();
         };
+
         document.body.appendChild(script);
 
+        // Return cleanup function
         return () => {
-          document.body.removeChild(script);
+          // Only try to remove if the component is still mounted
+          if (document.getElementById("onlyoffice-api-script")) {
+            try {
+              const scriptToRemove = document.getElementById(
+                "onlyoffice-api-script"
+              );
+              // Only remove if the script is still a child of its parent
+              if (
+                scriptToRemove &&
+                scriptToRemove.parentNode &&
+                Array.from(scriptToRemove.parentNode.childNodes).includes(
+                  scriptToRemove
+                )
+              ) {
+                scriptToRemove.parentNode.removeChild(scriptToRemove);
+              }
+            } catch (err) {
+              console.warn("Error removing script:", err);
+            }
+          }
         };
       } catch (err) {
         console.error("Error loading Document Server API:", err);
@@ -113,10 +147,13 @@ export default function DocumentEditor({ config, token }: DocumentEditorProps) {
             err instanceof Error ? err.message : String(err)
           }`
         );
+        return () => {}; // Return empty cleanup function
       }
     };
 
-    loadDocumentServerAPI();
+    // Call function and store cleanup
+    const cleanup = loadDocumentServerAPI();
+    return cleanup;
   }, []);
 
   useEffect(() => {
@@ -125,18 +162,45 @@ export default function DocumentEditor({ config, token }: DocumentEditorProps) {
 
     if (isLoaded && window.DocsAPI && editorRef.current && config) {
       try {
-        const editorConfig = { ...config };
-
         // Add token if provided
+        const editorConfig = { ...config };
         if (token) {
           editorConfig.token = token;
         }
 
+        // Add event listeners for better debugging
+        editorConfig.events = {
+          onAppReady: () => {
+            console.log("ONLYOFFICE Editor is ready");
+          },
+          onDocumentStateChange: (event: any) => {
+            console.log("Document state changed:", event.data);
+          },
+          onError: (event: any) => {
+            console.error("ONLYOFFICE Editor error:", event.data);
+            setError(`Editor error: ${JSON.stringify(event.data)}`);
+          },
+          onRequestSaveAs: (event: any) => {
+            console.log("Request save as:", event.data);
+          },
+          onRequestEditRights: () => {
+            console.log("User requested edit rights");
+          },
+          onRequestHistory: () => {
+            console.log("User requested document history");
+          },
+        };
+
+        console.log(
+          "Initializing ONLYOFFICE editor with config:",
+          editorConfig
+        );
         docEditor = new window.DocsAPI.DocEditor(
           "document-editor",
           editorConfig
         );
       } catch (err) {
+        console.error("Editor initialization error:", err);
         setError(
           `Error initializing editor: ${
             err instanceof Error ? err.message : String(err)
@@ -146,8 +210,18 @@ export default function DocumentEditor({ config, token }: DocumentEditorProps) {
     }
 
     return () => {
-      if (docEditor && docEditor.destroyEditor) {
-        docEditor.destroyEditor();
+      if (docEditor && typeof docEditor.destroyEditor === "function") {
+        try {
+          // Check if editor container still exists before destroying
+          if (document.getElementById("document-editor")) {
+            docEditor.destroyEditor();
+            console.log("ONLYOFFICE editor destroyed successfully");
+          }
+        } catch (err) {
+          console.warn("Error destroying editor:", err);
+        }
+        // Clean up reference
+        docEditor = null;
       }
     };
   }, [isLoaded, config, token]);

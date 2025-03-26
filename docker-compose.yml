@@ -1,0 +1,17 @@
+version: "3"
+services:
+  onlyoffice:
+    image: onlyoffice/documentserver
+    container_name: onlyoffice
+    restart: always
+    ports:
+      - "8080:80"
+    env_file:
+      - .env.docker
+    volumes:
+      - onlyoffice_data:/var/www/onlyoffice/Data
+      - onlyoffice_log:/var/log/onlyoffice
+
+volumes:
+  onlyoffice_data:
+  onlyoffice_log:

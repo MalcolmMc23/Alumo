@@ -39,12 +39,10 @@ export async function GET(
     // Extract the original filename from the stored file
     const originalFileName = targetFile.substring(fileId.length + 1); // +1 for the hyphen
     
-    // Create file URL using host.docker.internal for Docker containers
-    // Fall back to the server's public IP for external clients
-    const serverHost = process.env.ENABLE_DOCKER_HOST === 'true' 
-      ? 'host.docker.internal' 
-      : '5.78.66.245'; // Your server's public IP
-    const fileUrl = `http://${serverHost}:3000/uploads/${targetFile}`;
+    // Create file URL accessible from the document server
+    // Use the public URL of your Next.js app since that's what the document server needs to access
+    const publicUrl = process.env.NEXTAUTH_URL || 'http://5.78.66.245:3000';
+    const fileUrl = `${publicUrl}/uploads/${targetFile}`;
 
     logger.debug('File URL generated', { fileUrl, originalFile: originalFileName });
 
