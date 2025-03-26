@@ -31,7 +31,7 @@ export const generateDocumentJWT = (config: DocumentConfig): string => {
     throw new Error('ONLYOFFICE_JWT_SECRET is not defined in environment variables');
   }
 
-  return jwt.sign(config, jwtSecret, { expiresIn: '1h' });
+  return jwt.sign(config, jwtSecret, { algorithm: 'HS256', expiresIn: '1h' });
 };
 
 /**
