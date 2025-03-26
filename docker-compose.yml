@@ -1,0 +1,18 @@
+version: "3"
+services:
+  onlyoffice:
+    image: onlyoffice/documentserver
+    container_name: onlyoffice
+    restart: always
+    ports:
+      - "8080:80"
+    environment:
+      - JWT_ENABLED=true
+      - JWT_SECRET=25b0a22503790aaa3ec6a34e6463728c464f51d4dabf8fcdc3c967eb2cbc9bad
+    volumes:
+      - onlyoffice_data:/var/www/onlyoffice/Data
+      - onlyoffice_log:/var/log/onlyoffice
+
+volumes:
+  onlyoffice_data:
+  onlyoffice_log:

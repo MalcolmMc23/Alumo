@@ -19,6 +19,7 @@ export default function DocumentEditor({ config, token }: DocumentEditorProps) {
   const [error, setError] = useState<string | null>(null);
   const [apiUrl, setApiUrl] = useState<string>("");
   const [pingStatus, setPingStatus] = useState<string | null>(null);
+  const [jwtStatus, setJwtStatus] = useState<string | null>(null);
 
   // Function to ping the ONLYOFFICE Document Server
   const pingDocumentServer = async () => {
@@ -46,6 +47,31 @@ export default function DocumentEditor({ config, token }: DocumentEditorProps) {
     } catch (err) {
       setPingStatus(
         `Connection failed: ${err instanceof Error ? err.message : String(err)}`
+      );
+    }
+  };
+
+  // Function to test JWT authentication
+  const testJwtAuthentication = async () => {
+    try {
+      setJwtStatus("Testing JWT authentication...");
+
+      // Call our test endpoint
+      const response = await fetch("/api/documents/test-jwt", {
+        method: "GET",
+        cache: "no-cache",
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        setJwtStatus("JWT authentication successful ✓");
+      } else {
+        setJwtStatus(`JWT authentication failed: ${data.message}`);
+      }
+    } catch (err) {
+      setJwtStatus(
+        `JWT test failed: ${err instanceof Error ? err.message : String(err)}`
       );
     }
   };
@@ -138,15 +164,26 @@ export default function DocumentEditor({ config, token }: DocumentEditorProps) {
               Make sure the ONLYOFFICE Document Server is running and accessible
               at {apiUrl.split("/web-apps")[0]}.
             </p>
-            <div className="mt-3">
+            <div className="mt-3 space-y-2">
               {pingStatus ? (
                 <p className="text-sm text-gray-700">{pingStatus}</p>
               ) : (
                 <Button
                   onClick={pingDocumentServer}
-                  className="bg-blue-500 text-white hover:bg-blue-600 mt-2"
+                  className="bg-blue-500 text-white hover:bg-blue-600"
                 >
                   Test Connection
+                </Button>
+              )}
+
+              {jwtStatus ? (
+                <p className="text-sm text-gray-700">{jwtStatus}</p>
+              ) : (
+                <Button
+                  onClick={testJwtAuthentication}
+                  className="bg-green-500 text-white hover:bg-green-600"
+                >
+                  Test JWT Auth
                 </Button>
               )}
             </div>
@@ -166,8 +203,19 @@ export default function DocumentEditor({ config, token }: DocumentEditorProps) {
                   <code>sudo ufw status</code>
                 </li>
                 <li>
+                  Verify JWT is configured in the container:{" "}
+                  <code>
+                    sudo docker exec onlyoffice bash -c "grep JWT
+                    /etc/onlyoffice/documentserver/default.json"
+                  </code>
+                </li>
+                <li>
                   Restart the ONLYOFFICE container:{" "}
                   <code>sudo docker restart onlyoffice</code>
+                </li>
+                <li>
+                  Or restart with proper JWT configuration using Docker Compose:{" "}
+                  <code>cd /path/to/project && sudo docker-compose up -d</code>
                 </li>
               </ol>
             </div>
