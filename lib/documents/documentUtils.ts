@@ -144,13 +144,18 @@ export const createEditorConfig = (
     throw new Error('Either ONLYOFFICE_CALLBACK_URL or NEXTAUTH_URL must be defined');
   }
   
+  // Check if the baseCallbackUrl already includes the callback path
+  const hasCallbackPath = baseCallbackUrl.includes('/api/documents/callback');
+  
   // Make sure URL doesn't end with a slash
   const trimmedCallbackUrl = baseCallbackUrl.endsWith('/') 
     ? baseCallbackUrl.slice(0, -1) 
     : baseCallbackUrl;
   
-  // Ensure path is correctly formatted with fileId
-  const callbackUrl = `${trimmedCallbackUrl}/api/documents/callback?fileId=${fileId}`;
+  // Ensure path is correctly formatted with fileId - if URL already has the path, don't add it again
+  const callbackUrl = hasCallbackPath 
+    ? `${trimmedCallbackUrl}?fileId=${fileId}` 
+    : `${trimmedCallbackUrl}/api/documents/callback?fileId=${fileId}`;
   
   logger.debug('Callback URL generated', { callbackUrl });
 

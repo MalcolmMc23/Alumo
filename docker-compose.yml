@@ -1,4 +1,5 @@
-version: "3"
+version: "3.8"
+
 services:
   onlyoffice:
     image: onlyoffice/documentserver
@@ -6,11 +7,15 @@ services:
     restart: always
     ports:
       - "8080:80"
-    env_file:
-      - .env.docker
+    environment:
+      - JWT_ENABLED=true
+      - JWT_SECRET=25b0a22503790aaa3ec6a34e6463728c464f51d4dabf8fcdc3c967eb2cbc9bad
     volumes:
       - onlyoffice_data:/var/www/onlyoffice/Data
       - onlyoffice_log:/var/log/onlyoffice
+    extra_hosts:
+      # This allows the Docker container to resolve host.docker.internal to the host machine
+      - "host.docker.internal:host-gateway"
 
 volumes:
   onlyoffice_data:
